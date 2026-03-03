@@ -17,7 +17,6 @@
     onBossDeath,
     onSceneChange,
     onPauseEncounter,
-    onDungeonLogUpdate,
   } from "$lib/api";
   import { applyCustomFonts } from "$lib/font-loader";
   import { writable } from "svelte/store";
@@ -33,8 +32,6 @@
     setLiveData,
     clearMeterData,
     cleanupStores,
-    setLiveDungeonLog,
-    clearLiveDungeonLog,
   } from "$lib/stores/live-meter-store.svelte";
   import HeaderCustom from "./header-custom.svelte";
 
@@ -93,7 +90,6 @@
         lastEventTime = Date.now();
         hadAnyEvent = true;
         clearMeterData();
-        clearLiveDungeonLog();
         notificationToast?.showToast(
           "notice",
           "Server change detected, resetting log",
@@ -103,22 +99,6 @@
       if (isDestroyed) {
         playersUnlisten();
         resetUnlisten();
-        listenersSetupInProgress = false;
-        return;
-      }
-
-      // Set up dungeon log listener
-      const dungeonLogUnlisten = await onDungeonLogUpdate((event) => {
-        if (isDestroyed) return;
-        lastEventTime = Date.now();
-        hadAnyEvent = true;
-        setLiveDungeonLog(event.payload);
-      });
-
-      if (isDestroyed) {
-        playersUnlisten();
-        resetUnlisten();
-        dungeonLogUnlisten();
         listenersSetupInProgress = false;
         return;
       }
@@ -153,7 +133,6 @@
       if (isDestroyed) {
         playersUnlisten();
         resetUnlisten();
-        dungeonLogUnlisten();
         encounterUnlisten();
         listenersSetupInProgress = false;
         return;
@@ -174,7 +153,6 @@
       if (isDestroyed) {
         playersUnlisten();
         resetUnlisten();
-        dungeonLogUnlisten();
         encounterUnlisten();
         bossDeathUnlisten();
         listenersSetupInProgress = false;
@@ -194,7 +172,6 @@
       if (isDestroyed) {
         playersUnlisten();
         resetUnlisten();
-        dungeonLogUnlisten();
         encounterUnlisten();
         bossDeathUnlisten();
         sceneChangeUnlisten();
@@ -213,7 +190,6 @@
       if (isDestroyed) {
         playersUnlisten();
         resetUnlisten();
-        dungeonLogUnlisten();
         encounterUnlisten();
         bossDeathUnlisten();
         sceneChangeUnlisten();
@@ -243,9 +219,6 @@
         } catch {}
         try {
           pauseUnlisten();
-        } catch {}
-        try {
-          dungeonLogUnlisten();
         } catch {}
       };
 

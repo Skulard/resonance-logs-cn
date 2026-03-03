@@ -34,10 +34,6 @@ pub struct HeaderInfo {
     pub scene_id: Option<i32>,
     /// The name of the scene where the encounter took place.
     pub scene_name: Option<String>,
-    /// The current segment type ('boss', 'trash', or null if no segment active).
-    pub current_segment_type: Option<String>,
-    /// The display name for the current segment (boss name when available).
-    pub current_segment_name: Option<String>,
 }
 
 /// Represents a raw
@@ -55,8 +51,6 @@ pub struct LiveDataPayload {
     pub is_paused: bool,
     pub bosses: Vec<BossHealth>,
     pub entities: Vec<RawEntityData>,
-    pub current_segment_type: Option<String>,
-    pub current_segment_name: Option<String>,
 }
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Default, Clone)]

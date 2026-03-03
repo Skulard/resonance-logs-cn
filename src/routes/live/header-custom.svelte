@@ -23,7 +23,7 @@
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import { emitTo } from "@tauri-apps/api/event";
   import { SETTINGS } from "$lib/settings-store";
-  import { getLiveData, getLiveDungeonLog } from "$lib/stores/live-meter-store.svelte";
+  import { getLiveData } from "$lib/stores/live-meter-store.svelte";
 
   // Get header settings
   let h = $derived(SETTINGS.live.headerCustomization.state);
@@ -33,30 +33,6 @@
   let fightStartTimestampMs = $state(0);
   let clientElapsedMs = $state(0);
   let animationFrameId: number | null = null;
-
-  // Reactive dungeon log state with derived active segment info
-  let dungeonLog = $derived(getLiveDungeonLog());
-  let activeSegment = $derived(
-    dungeonLog?.segments?.find((s) => !s.endedAtMs) ?? null,
-  );
-  let activeSegmentInfo = $derived.by(() => {
-    if (!activeSegment) return null;
-
-    const durationSecs = Math.max(
-      1,
-      ((activeSegment.endedAtMs ?? Date.now()) - activeSegment.startedAtMs) /
-        1000,
-    );
-
-    return {
-      durationSecs,
-      type: activeSegment.segmentType,
-      label:
-        activeSegment.segmentType === "boss"
-          ? (activeSegment.bossName ?? "Boss Segment")
-          : "Trash Segment",
-    };
-  });
 
   // Client-side timer loop for smooth local elapsed display.
   function updateClientTimer() {
@@ -77,8 +53,6 @@
       bosses: [],
       sceneId: null,
       sceneName: null,
-      currentSegmentType: null,
-      currentSegmentName: null,
     };
   }
 
@@ -107,8 +81,6 @@
     bosses: [],
     sceneId: null,
     sceneName: null,
-    currentSegmentType: null,
-    currentSegmentName: null,
   });
   let isEncounterPaused = $state(false);
 
@@ -129,8 +101,6 @@
       bosses: data.bosses,
       sceneId: data.sceneId,
       sceneName: data.sceneName,
-      currentSegmentType: data.currentSegmentType,
-      currentSegmentName: data.currentSegmentName,
     };
 
     isEncounterPaused = !!data.isPaused;
@@ -166,7 +136,7 @@
 
   // Check if we have any row 1 left content
   let hasRow1Left = $derived(
-    h.showTimer || h.showSceneName || h.showSegmentInfo,
+    h.showTimer || h.showSceneName,
   );
 
   // Check if we have any row 1 right content (buttons)
@@ -230,21 +200,6 @@
           >
         {/if}
 
-        {#if h.showSegmentInfo && activeSegmentInfo}
-          <span
-            class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 {activeSegmentInfo.type ===
-            'boss'
-              ? 'border-orange-500/30 bg-orange-500/10 text-orange-400'
-              : 'border-slate-500/30 bg-slate-500/10 text-slate-400'}"
-            style="font-size: {h.segmentFontSize}px"
-          >
-            <span class="font-semibold tracking-wide"
-              >{activeSegmentInfo.label}</span
-            >
-            <span class="text-muted-foreground">•</span>
-            <span>{Math.floor(activeSegmentInfo.durationSecs)}s</span>
-          </span>
-        {/if}
       </div>
     {/if}
 

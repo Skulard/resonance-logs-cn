@@ -141,7 +141,5 @@ export function computeHeaderInfo(data: LiveDataPayload): HeaderInfo {
     bosses: data.bosses,
     sceneId: data.sceneId,
     sceneName: data.sceneName,
-    currentSegmentType: data.currentSegmentType,
-    currentSegmentName: data.currentSegmentName,
   };
 }

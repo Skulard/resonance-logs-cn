@@ -16,8 +16,6 @@
     bosses: [],
     sceneId: null,
     sceneName: null,
-    currentSegmentType: null,
-    currentSegmentName: null,
   });
 
 

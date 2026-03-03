@@ -261,7 +261,6 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenDps: true,
   shortenTps: true,
   bossOnlyDps: false,
-  dungeonSegmentsEnabled: false,
   eventUpdateRateMs: 200,
 };
 
@@ -510,7 +509,6 @@ const DEFAULT_SETTINGS = {
       headerPadding: 8,
       showTimer: true,
       showSceneName: true,
-      showSegmentInfo: true,
       showResetButton: true,
       showPauseButton: true,
       showBossOnlyButton: true,
@@ -523,7 +521,6 @@ const DEFAULT_SETTINGS = {
       timerLabelFontSize: 12,
       timerFontSize: 18,
       sceneNameFontSize: 14,
-      segmentFontSize: 12,
       resetButtonSize: 20,
       resetButtonPadding: 8,
       pauseButtonSize: 20,

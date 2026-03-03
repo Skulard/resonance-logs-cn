@@ -84,17 +84,6 @@ async setBossOnlyDps(enabled: boolean) : Promise<Result<null, string>> {
 }
 },
 /**
- * Enables or disables dungeon segment tracking.
- */
-async setDungeonSegmentsEnabled(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_dungeon_segments_enabled", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Sets the event update rate in milliseconds.
  * 
  * # Arguments
@@ -109,17 +98,6 @@ async setDungeonSegmentsEnabled(enabled: boolean) : Promise<Result<null, string>
 async setEventUpdateRateMs(rateMs: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("set_event_update_rate_ms", { rateMs }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Returns the current dungeon log snapshot for the frontend.
- */
-async getDungeonLog() : Promise<Result<DungeonLog, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_dungeon_log") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -531,16 +509,7 @@ maxHp: number | null;
 isDefeated: boolean }
 export type BuffDefinition = { baseId: number; name: string; spriteFile: string; searchKeywords: string[] }
 export type BuffNameInfo = { baseId: number; name: string; hasSpriteFile: boolean }
-export type CombatState = "idle" | "inCombat"
-/**
- * Discrete damage occurrence stored on a segment.
- */
-export type DamageEvent = { timestampMs: number; attackerId: number; targetId: number; targetName: string | null; targetMonsterTypeId: number | null; amount: number; isBossTarget: boolean; isKillingBlow: boolean }
 export type Device = { name: string; description: string | null }
-/**
- * Master container for dungeon segments within a scene.
- */
-export type DungeonLog = { sceneId: number | null; sceneName: string | null; combatState: CombatState; segments: Segment[] }
 /**
  * Filters for querying encounters.
  */
@@ -677,15 +646,6 @@ export type SceneNamesResult = {
  * A list of scene names.
  */
 names: string[] }
-/**
- * Represents an individual combat segment (boss or trash).
- */
-export type Segment = { id: number; segmentType: SegmentType; 
-/**
- * Primary boss entity ID (first one seen) - kept for backwards compatibility
- */
-bossEntityId: number | null; bossMonsterTypeId: number | null; bossName: string | null; startedAtMs: number; endedAtMs: number | null; totalDamage: number; hitCount: number; events: DamageEvent[] }
-export type SegmentType = "boss" | "trash"
 
 /** tauri-specta globals **/
 

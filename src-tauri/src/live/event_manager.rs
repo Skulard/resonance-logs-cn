@@ -220,8 +220,6 @@ pub type EventManagerMutex = RwLock<EventManager>;
 
 pub fn generate_live_data_payload(
     encounter: &Encounter,
-    current_segment_type: Option<String>,
-    current_segment_name: Option<String>,
 ) -> LiveDataPayload {
     let elapsed_ms = encounter
         .time_last_combat_packet_ms
@@ -314,7 +312,5 @@ pub fn generate_live_data_payload(
         is_paused: encounter.is_encounter_paused,
         bosses,
         entities,
-        current_segment_type,
-        current_segment_name,
     }
 }

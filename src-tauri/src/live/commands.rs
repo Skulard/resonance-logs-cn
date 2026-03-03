@@ -1,5 +1,4 @@
 use crate::WINDOW_LIVE_LABEL;
-use crate::live::dungeon_log;
 use crate::live::state::{AppStateManager, StateEvent};
 use log::info;
 use tauri::Manager;
@@ -24,30 +23,6 @@ pub async fn set_boss_only_dps(
 ) -> Result<(), String> {
     state_manager.set_boss_only_dps(enabled).await?;
     Ok(())
-}
-
-/// Enables or disables dungeon segment tracking.
-#[tauri::command]
-#[specta::specta]
-pub async fn set_dungeon_segments_enabled(
-    enabled: bool,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    state_manager.set_dungeon_segments_enabled(enabled).await?;
-    Ok(())
-}
-
-/// Returns the current dungeon log snapshot for the frontend.
-#[tauri::command]
-#[specta::specta]
-pub async fn get_dungeon_log(
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<dungeon_log::DungeonLog, String> {
-    state_manager
-        .latest_snapshot()
-        .dungeon_log
-        .clone()
-        .ok_or_else(|| "Failed to read dungeon log state".to_string())
 }
 
 /// Enables blur on the live meter window.

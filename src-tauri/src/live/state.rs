@@ -7,10 +7,7 @@ use crate::live::commands_models::{
     BuffUpdatePayload, BuffUpdateState, FightResourceState, FightResourceUpdatePayload,
     PanelAttrState, PanelAttrUpdatePayload, SkillCdState, SkillCdUpdatePayload,
 };
-use crate::live::dungeon_log::{
-    self, BattleStateMachine, DungeonLogRuntime, EncounterResetReason, SegmentType,
-    SharedDungeonLog,
-};
+use crate::live::dungeon_log::{BattleStateMachine, EncounterResetReason};
 use crate::live::event_manager::EventManager;
 use crate::live::opcodes_models::Encounter;
 use blueprotobuf_lib::blueprotobuf;
@@ -154,10 +151,6 @@ pub struct AppState {
     pub low_hp_bosses: HashMap<i64, u128>,
     /// Whether we've already handled the first scene change after startup.
     pub initial_scene_change_handled: bool,
-    /// Shared dungeon log used for segment tracking.
-    pub dungeon_log: SharedDungeonLog,
-    /// Feature flag for dungeon segment tracking.
-    pub dungeon_segments_enabled: bool,
     /// Event update rate in milliseconds (default: 200ms). Controls how often events are emitted to frontend.
     pub event_update_rate_ms: u64,
     /// Current fight resource state.
@@ -198,17 +191,14 @@ pub struct ActiveBuff {
 #[derive(Debug, Clone)]
 pub struct LiveStateSnapshot {
     pub encounter: Encounter,
-    pub dungeon_log: Option<crate::live::dungeon_log::DungeonLog>,
     pub boss_only_dps: bool,
     pub event_update_rate_ms: u64,
-    pub active_segment_elapsed_ms: Option<u128>,
 }
 
 #[derive(Debug, Clone)]
 pub enum LiveControlCommand {
     StateEvent(StateEvent),
     SetBossOnlyDps(bool),
-    SetDungeonSegmentsEnabled(bool),
     SetEventUpdateRateMs(u64),
     SetMonitoredBuffs(Vec<i32>),
     SetMonitoredPanelAttrs(Vec<i32>),
@@ -245,8 +235,6 @@ impl AppState {
             boss_only_dps: false,
             low_hp_bosses: HashMap::new(),
             initial_scene_change_handled: false,
-            dungeon_log: dungeon_log::create_shared_log(),
-            dungeon_segments_enabled: false,
             event_update_rate_ms: 200,
             fight_res_state: None,
             temp_attr_values: HashMap::new(),
@@ -576,13 +564,6 @@ impl AppStateManager {
                 state.boss_only_dps = enabled;
                 self.update_and_emit_events_with_state(state).await;
             }
-            LiveControlCommand::SetDungeonSegmentsEnabled(enabled) => {
-                state.dungeon_segments_enabled = enabled;
-                let runtime =
-                    DungeonLogRuntime::new(state.dungeon_log.clone(), state.app_handle.clone());
-                let snapshot = runtime.snapshot();
-                dungeon_log::emit_if_changed(&runtime.app_handle, snapshot);
-            }
             LiveControlCommand::SetEventUpdateRateMs(rate_ms) => {
                 state.event_update_rate_ms = rate_ms;
             }
@@ -632,11 +613,6 @@ impl AppStateManager {
     async fn on_server_change(&self, state: &mut AppState) {
         use crate::live::opcodes_process::on_server_change;
         state.pending_auto_reset = None;
-
-        // Persist dungeon segments if enabled
-        if state.dungeon_segments_enabled {
-            dungeon_log::persist_segments(&state.dungeon_log, true);
-        }
 
         // Persist encounter directly on server change.
         let defeated = state.event_manager.take_dead_bosses();
@@ -716,44 +692,6 @@ impl AppStateManager {
         state.battle_state = BattleStateMachine::default();
     }
 
-    async fn snapshot_segment_and_reset_live_meter(&self, state: &mut AppState) {
-        // Persist dungeon segments
-        // dungeon_log::persist_segments(&state.dungeon_log, true);
-
-        // Store the original fight start time before reset
-        let original_fight_start_ms = state.encounter.time_fight_start_ms;
-
-        // Reset combat state (live meter)
-        state.encounter.reset_combat_state();
-
-        // Restore the original fight start time to preserve total encounter duration
-        state.encounter.time_fight_start_ms = original_fight_start_ms;
-
-        if state.event_manager.should_emit_events() {
-            state.event_manager.emit_encounter_reset();
-            // Clear dead bosses tracking for the new segment
-            state.event_manager.clear_dead_bosses();
-
-            // Emit an encounter update with cleared state so frontend updates immediately
-            use crate::live::commands_models::HeaderInfo;
-            let cleared_header = HeaderInfo {
-                total_dps: 0.0,
-                total_dmg: 0,
-                elapsed_ms: 0,
-                fight_start_timestamp_ms: 0,
-                bosses: vec![],
-                scene_id: state.encounter.current_scene_id,
-                scene_name: state.encounter.current_scene_name.clone(),
-                current_segment_type: None,
-                current_segment_name: None,
-            };
-            state
-                .event_manager
-                .emit_encounter_update(cleared_header, false);
-        }
-
-        state.low_hp_bosses.clear();
-    }
     // all scene id extraction logic is here (its pretty rough)
     async fn process_enter_scene(
         &self,
@@ -788,8 +726,6 @@ impl AppStateManager {
             }
         }
 
-        let dungeon_runtime = dungeon_runtime_if_enabled(state);
-
         if !state.initial_scene_change_handled {
             info!("Initial scene detected");
             state.initial_scene_change_handled = true;
@@ -816,16 +752,8 @@ impl AppStateManager {
                     prev_scene, scene_id
                 );
                 state.pending_auto_reset = None;
-
-                if state.dungeon_segments_enabled {
-                    info!(
-                        "Dungeon segments enabled: snapshotting segment and resetting live meter"
-                    );
-                    self.snapshot_segment_and_reset_live_meter(state).await;
-                } else {
-                    info!("Standard mode: ending active encounter");
-                    self.reset_encounter(state, false).await;
-                }
+                info!("Scene changed: ending active encounter");
+                self.reset_encounter(state, false).await;
             }
 
             // Update encounter with scene info
@@ -843,21 +771,6 @@ impl AppStateManager {
                 warn!("Event manager not ready, skipping scene change emit");
             }
 
-            match dungeon_runtime.as_ref() {
-                Some(runtime) => {
-                    runtime.reset_for_scene(
-                        state.encounter.current_scene_id,
-                        state.encounter.current_scene_name.clone(),
-                    );
-                }
-                None => {
-                    let _ = dungeon_log::reset_for_scene(
-                        &state.dungeon_log,
-                        state.encounter.current_scene_id,
-                        state.encounter.current_scene_name.clone(),
-                    );
-                }
-            }
         } else {
             warn!(
                 "Could not extract scene_id from EnterScene packet - dumping attrs for debugging"
@@ -940,18 +853,6 @@ impl AppStateManager {
                 state.event_manager.emit_scene_change(fallback_name);
             }
 
-            match dungeon_runtime.as_ref() {
-                Some(runtime) => {
-                    runtime.reset_for_scene(None, state.encounter.current_scene_name.clone());
-                }
-                None => {
-                    let _ = dungeon_log::reset_for_scene(
-                        &state.dungeon_log,
-                        None,
-                        state.encounter.current_scene_name.clone(),
-                    );
-                }
-            }
         }
     }
 
@@ -1040,22 +941,6 @@ impl AppStateManager {
                     state.event_manager.emit_scene_change(scene_name.clone());
                 }
 
-                let dungeon_runtime = dungeon_runtime_if_enabled(state);
-                match dungeon_runtime.as_ref() {
-                    Some(runtime) => {
-                        runtime.reset_for_scene(
-                            state.encounter.current_scene_id,
-                            state.encounter.current_scene_name.clone(),
-                        );
-                    }
-                    None => {
-                        let _ = dungeon_log::reset_for_scene(
-                            &state.dungeon_log,
-                            state.encounter.current_scene_id,
-                            state.encounter.current_scene_name.clone(),
-                        );
-                    }
-                }
             }
         }
 
@@ -1288,12 +1173,10 @@ impl AppStateManager {
         }
 
         // Missing fields are normal, no need to log
-        let dungeon_ctx = dungeon_runtime_if_enabled(state);
         let _ = process_sync_to_me_delta_info(
             &mut state.encounter,
             &mut state.entity_cache,
             sync_to_me_delta_info,
-            dungeon_ctx.as_ref(),
         );
 
         if let Some(raw_bytes) = buff_effect_bytes {
@@ -1398,14 +1281,12 @@ impl AppStateManager {
             }
         }
 
-        let dungeon_ctx = dungeon_runtime_if_enabled(state);
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
             let _ = process_aoi_sync_delta(
                 &mut state.encounter,
                 &mut state.entity_cache,
                 aoi_sync_delta,
-                dungeon_ctx.as_ref(),
             );
         }
     }
@@ -1464,11 +1345,6 @@ impl AppStateManager {
     }
 
     async fn reset_encounter(&self, state: &mut AppState, is_manual: bool) {
-        // Persist dungeon segments if enabled
-        if state.dungeon_segments_enabled {
-            dungeon_log::persist_segments(&state.dungeon_log, true);
-        }
-
         // Persist encounter directly on reset.
         let defeated = state.event_manager.take_dead_bosses();
         let mut player_names: Vec<PlayerNameEntry> = state
@@ -1552,8 +1428,6 @@ impl AppStateManager {
                 bosses: vec![],
                 scene_id: state.encounter.current_scene_id,
                 scene_name: state.encounter.current_scene_name.clone(),
-                current_segment_type: None,
-                current_segment_name: None,
             };
             state
                 .event_manager
@@ -1635,10 +1509,6 @@ impl AppStateManager {
 
     pub async fn set_boss_only_dps(&self, enabled: bool) -> Result<(), String> {
         self.send_control(LiveControlCommand::SetBossOnlyDps(enabled))
-    }
-
-    pub async fn set_dungeon_segments_enabled(&self, enabled: bool) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetDungeonSegmentsEnabled(enabled))
     }
 
     pub async fn set_event_update_rate_ms(&self, rate_ms: u64) -> Result<(), String> {
@@ -1807,43 +1677,11 @@ fn process_buff_effect_bytes(
     Some(payload)
 }
 
-fn dungeon_runtime_if_enabled(state: &AppState) -> Option<DungeonLogRuntime> {
-    if state.dungeon_segments_enabled {
-        Some(DungeonLogRuntime::new(
-            state.dungeon_log.clone(),
-            state.app_handle.clone(),
-        ))
-    } else {
-        None
-    }
-}
-
 fn build_live_state_snapshot(state: &AppState) -> LiveStateSnapshot {
-    let active_segment_elapsed_ms = if state.dungeon_segments_enabled {
-        dungeon_log::snapshot(&state.dungeon_log).and_then(|log| {
-            log.segments
-                .iter()
-                .rev()
-                .find(|s| s.ended_at_ms.is_none())
-                .map(|segment| {
-                    let start_ms = segment.started_at_ms.max(0) as u128;
-                    let end_ms = segment
-                        .ended_at_ms
-                        .map(|t| t.max(0) as u128)
-                        .unwrap_or(state.encounter.time_last_combat_packet_ms);
-                    end_ms.saturating_sub(start_ms)
-                })
-        })
-    } else {
-        None
-    };
-
     LiveStateSnapshot {
         encounter: state.encounter.clone(),
-        dungeon_log: dungeon_log::snapshot(&state.dungeon_log),
         boss_only_dps: state.boss_only_dps,
         event_update_rate_ms: state.event_update_rate_ms,
-        active_segment_elapsed_ms,
     }
 }
 
@@ -1854,34 +1692,7 @@ impl AppStateManager {
             return;
         }
 
-        let dungeon_ctx = dungeon_runtime_if_enabled(state);
-
-        let active_segment_snapshot = dungeon_ctx
-            .as_ref()
-            .and_then(|runtime| runtime.snapshot())
-            .and_then(|log| {
-                log.segments
-                    .iter()
-                    .rev()
-                    .find(|s| s.ended_at_ms.is_none())
-                    .cloned()
-            });
-
-        let active_segment = if let Some(segment) = active_segment_snapshot {
-            let segment_type = match segment.segment_type {
-                SegmentType::Boss => "boss".to_string(),
-                SegmentType::Trash => "trash".to_string(),
-            };
-            Some((segment_type, segment.boss_name.clone()))
-        } else {
-            None
-        };
-
-        let mut payload = crate::live::event_manager::generate_live_data_payload(
-            &state.encounter,
-            active_segment.as_ref().map(|(segment_type, _)| segment_type.clone()),
-            active_segment.as_ref().and_then(|(_, segment_name)| segment_name.clone()),
-        );
+        let mut payload = crate::live::event_manager::generate_live_data_payload(&state.encounter);
 
         let mut boss_deaths: Vec<(i64, String)> = Vec::new();
         let current_time_ms = now_ms() as u128;
@@ -1914,23 +1725,14 @@ impl AppStateManager {
             safe_emit(&app_handle, "live-data", payload);
 
             if !boss_deaths.is_empty() {
-                let mut any_new_death = false;
                 for (boss_uid, boss_name) in boss_deaths {
                     let first_time = state.event_manager.emit_boss_death(boss_name, boss_uid);
-                    if first_time {
-                        any_new_death = true;
+                    if !first_time {
+                        continue;
                     }
-                }
-
-                if any_new_death && state.dungeon_segments_enabled {
-                    dungeon_log::persist_segments(&state.dungeon_log, true);
                 }
                 self.publish_snapshot_from_state(state);
             }
-        }
-
-        if let Some(runtime) = dungeon_ctx {
-            runtime.check_for_timeout(Instant::now());
         }
     }
 }

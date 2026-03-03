@@ -1,16 +1,16 @@
 // NOTE: opcodes_process works on Encounter directly; avoid importing opcodes_models at top-level.
 use crate::database::{CachedEntity, CachedPlayerData, now_ms};
-use crate::live::dungeon_log::{self, BattleStateMachine, DungeonLogRuntime, EncounterResetReason};
+use crate::live::dungeon_log::{BattleStateMachine, EncounterResetReason};
+use crate::live::damage_id;
 use crate::live::opcodes_models::class::{
     ClassSpec, get_class_id_from_spec, get_class_spec_from_skill_id,
 };
 use crate::live::opcodes_models::{AttrType, AttrValue, Encounter, Entity, Skill, attr_type};
-use crate::live::damage_id;
 use blueprotobuf_lib::blueprotobuf;
 use blueprotobuf_lib::blueprotobuf::{Attr, EDamageType, EEntityType};
+use bytes::Buf;
 use log::{info, warn};
 use std::collections::HashMap;
-use bytes::Buf;
 use std::default::Default;
 
 /// Parses packed varints from ATTR_FIGHT_RESOURCES (50002) raw data.
@@ -430,7 +430,8 @@ pub fn process_sync_dungeon_data(
                     complete,
                     nums
                 );
-                if let Some(reason) = battle_state.record_dungeon_target(target_id, nums, complete) {
+                if let Some(reason) = battle_state.record_dungeon_target(target_id, nums, complete)
+                {
                     reset_reason = Some(reason);
                 }
             }
@@ -466,18 +467,18 @@ pub fn process_sync_dungeon_dirty_data(
         "SyncDungeonDirtyData buffer length={} bytes",
         bytes.len()
     );
-    let dirty_sync = match crate::live::dungeon_dirty_blob::parse_dirty_dungeon_data(bytes.as_slice())
-    {
-        Ok(v) => v,
-        Err(e) => {
-            warn!(
-                target: "app::live",
-                "Failed to decode dirty dungeon blob from buffer: {}",
-                e
-            );
-            return None;
-        }
-    };
+    let dirty_sync =
+        match crate::live::dungeon_dirty_blob::parse_dirty_dungeon_data(bytes.as_slice()) {
+            Ok(v) => v,
+            Err(e) => {
+                warn!(
+                    target: "app::live",
+                    "Failed to decode dirty dungeon blob from buffer: {}",
+                    e
+                );
+                return None;
+            }
+        };
 
     let mut reset_reason = None;
     if let Some(state) = dirty_sync.flow_state {
@@ -518,7 +519,6 @@ pub fn process_sync_to_me_delta_info(
     encounter: &mut Encounter,
     entity_cache: &mut HashMap<i64, CachedEntity>,
     sync_to_me_delta_info: blueprotobuf::SyncToMeDeltaInfo,
-    dungeon_runtime: Option<&DungeonLogRuntime>,
 ) -> Option<()> {
     let delta_info = match sync_to_me_delta_info.delta_info {
         Some(info) => info,
@@ -533,7 +533,7 @@ pub fn process_sync_to_me_delta_info(
     }
 
     if let Some(base_delta) = delta_info.base_delta {
-        process_aoi_sync_delta(encounter, entity_cache, base_delta, dungeon_runtime);
+        process_aoi_sync_delta(encounter, entity_cache, base_delta);
     }
 
     Some(())
@@ -543,7 +543,6 @@ pub fn process_aoi_sync_delta(
     encounter: &mut Encounter,
     entity_cache: &mut HashMap<i64, CachedEntity>,
     aoi_sync_delta: blueprotobuf::AoiSyncDelta,
-    dungeon_runtime: Option<&DungeonLogRuntime>,
 ) -> Option<()> {
     let target_uuid = aoi_sync_delta.uuid?; // UUID =/= uid (have to >> 16)
     let target_uid = target_uuid >> 16;
@@ -586,21 +585,6 @@ pub fn process_aoi_sync_delta(
         }
     }
 
-    // // Dump BuffInfoSync if present (for debugging)
-    // if let Some(ref buff_info_sync) = aoi_sync_delta.buff_infos {
-    //     if !buff_info_sync.buff_infos.is_empty() {
-    //         match serde_json::to_string_pretty(buff_info_sync) {
-    //             Ok(json) => {
-    //                 info!(
-    //                     "BuffInfoSync (from AoiSyncDelta, target_uid={}): \n{}",
-    //                     target_uid, json
-    //                 );
-    //             }
-    //             Err(e) => {
-    //                 info!(
-    //                     "BuffInfoSync (from AoiSyncDelta, target_uid={}, JSON failed: {}): {:?}",
-    //                     target_uid, e, buff_info_sync
-    //                 );
     let Some(skill_effect) = aoi_sync_delta.skill_effects else {
         return Some(()); // return ok since this variable usually doesn't exist
     };
@@ -821,7 +805,7 @@ pub fn process_aoi_sync_delta(
         };
 
         // Now handle defender-side updates in their own scope and compute death info
-        let (death_info_local, target_name, target_monster_type_id) = {
+        let death_info_local = {
             // Track damage taken
             let hp_loss = sync_damage_info.hp_lessen_value.unwrap_or(0).max(0) as u128;
             let shield_loss = sync_damage_info.shield_lessen_value.unwrap_or(0).max(0) as u128;
@@ -838,13 +822,6 @@ pub fn process_aoi_sync_delta(
                     entity_type: EEntityType::from(target_uuid),
                     ..Default::default()
                 });
-
-            let target_name = if defender_entity.name.is_empty() {
-                None
-            } else {
-                Some(defender_entity.name.clone())
-            };
-            let target_monster_type_id = defender_entity.monster_type_id.map(|id| i64::from(id));
 
             // Check for death
             let prev_hp_opt = defender_entity.hp();
@@ -897,36 +874,8 @@ pub fn process_aoi_sync_delta(
                 None
             };
 
-            (death_info, target_name, target_monster_type_id)
+            death_info
         };
-
-        if let Some(runtime) = dungeon_runtime {
-            if !was_heal_event {
-                let damage_amount = actual_value.min(i64::MAX as u128) as i64;
-                let is_boss_target_hint = encounter
-                    .entity_uid_to_entity
-                    .get(&target_uid)
-                    .map(|entity| entity.is_boss())
-                    .unwrap_or(false);
-
-                let damage_event = dungeon_log::build_damage_event(
-                    timestamp_ms_i64,
-                    attacker_uid,
-                    target_uid,
-                    target_name.clone(),
-                    target_monster_type_id,
-                    damage_amount,
-                    death_info_local.is_some(),
-                    is_boss_target_hint,
-                );
-                let (boss_died, new_boss_started) = runtime.process_damage_event(damage_event);
-
-                // Persist segments if a boss died or a new boss started (implies previous segment closed)
-                if boss_died || new_boss_started {
-                    dungeon_log::persist_segments(&runtime.shared_log, false);
-                }
-            }
-        }
 
         // If death detected, record it (dedupe handled inside record_death)
         if let Some((actor, killer, skill, ts)) = death_info_local {
@@ -1058,8 +1007,7 @@ fn process_player_attrs(
             },
             attr_type::ATTR_SEASON_STRENGTH => match prost::encoding::decode_varint(&mut buf) {
                 Ok(value) => {
-                    player_entity
-                        .set_attr(AttrType::SeasonStrength, AttrValue::Int(value as i64));
+                    player_entity.set_attr(AttrType::SeasonStrength, AttrValue::Int(value as i64));
                 }
                 Err(e) => log::warn!("Failed to decode ATTR_SEASON_STRENGTH: {:?}", e),
             },

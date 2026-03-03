@@ -29,8 +29,6 @@ export type HeaderInfo = {
   bosses: BossHealth[];
   sceneId: number | null;
   sceneName: string | null;
-  currentSegmentType: 'boss' | 'trash' | null;
-  currentSegmentName: string | null;
 };
 
 export type PlayerRow = {
@@ -141,8 +139,6 @@ export type LiveDataPayload = {
   isPaused: boolean;
   bosses: BossHealth[];
   entities: RawEntityData[];
-  currentSegmentType: "boss" | "trash" | null;
-  currentSegmentName: string | null;
 };
 
 export type BossDeathPayload = {
@@ -151,37 +147,6 @@ export type BossDeathPayload = {
 
 export type SceneChangePayload = {
   sceneName: string;
-};
-
-export type DamageEvent = {
-  timestampMs: number;
-  attackerId: number;
-  targetId: number;
-  targetName: string | null;
-  targetMonsterTypeId: number | null;
-  amount: number;
-  isBossTarget: boolean;
-  isKillingBlow: boolean;
-};
-
-export type Segment = {
-  id: number;
-  segmentType: 'boss' | 'trash';
-  bossEntityId: number | null;
-  bossMonsterTypeId: number | null;
-  bossName: string | null;
-  startedAtMs: number;
-  endedAtMs: number | null;
-  totalDamage: number;
-  hitCount: number;
-  events: DamageEvent[];
-};
-
-export type DungeonLog = {
-  sceneId: number | null;
-  sceneName: string | null;
-  combatState: 'idle' | 'inCombat';
-  segments: Segment[];
 };
 
 // Event listener functions
@@ -196,9 +161,6 @@ export const onBossDeath = (handler: (event: Event<BossDeathPayload>) => void): 
 
 export const onSceneChange = (handler: (event: Event<SceneChangePayload>) => void): Promise<UnlistenFn> =>
   listen<SceneChangePayload>("scene-change", handler);
-
-export const onDungeonLogUpdate = (handler: (event: Event<DungeonLog>) => void): Promise<UnlistenFn> =>
-  listen<DungeonLog>("log-update", handler);
 
 export const onResetEncounter = (handler: () => void): Promise<UnlistenFn> =>
   listen("reset-encounter", handler);
@@ -239,16 +201,11 @@ export const getEncounterEntitiesRaw = (
 // New: toggle boss-only DPS filtering on the backend
 export const setBossOnlyDps = (enabled: boolean): Promise<void> => invoke("set_boss_only_dps", { enabled });
 
-// export const setDungeonSegmentsEnabled = (enabled: boolean): Promise<void> =>
-//   invoke("set_dungeon_segments_enabled", { enabled });
-
 export const setEventUpdateRateMs = (rateMs: number): Promise<void> =>
   invoke("set_event_update_rate_ms", { rateMs });
 
 export const setMonitoredPanelAttrs = (attrIds: number[]): Promise<void> =>
   invoke("set_monitored_panel_attrs", { attrIds });
-
-export const getDungeonLog = (): Promise<DungeonLog> => invoke("get_dungeon_log");
 
 // =========================
 // 模组计算器相关 API

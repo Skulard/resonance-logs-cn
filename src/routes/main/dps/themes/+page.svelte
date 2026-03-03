@@ -293,7 +293,6 @@
         headerPadding: 0,
         showTimer: false,
         showSceneName: false,
-        showSegmentInfo: false,
         showResetButton: false,
         showPauseButton: false,
         showBossOnlyButton: false,
@@ -306,7 +305,6 @@
         timerLabelFontSize: 9,
         timerFontSize: 12,
         sceneNameFontSize: 10,
-        segmentFontSize: 9,
         resetButtonSize: 14,
         resetButtonPadding: 4,
         pauseButtonSize: 14,
@@ -358,10 +356,9 @@
       header: {
         windowPadding: 0,
         headerPadding: 6,
-        // Enable only: timer, scene name, segments, reset and pause
+        // Enable only: timer, scene name, reset and pause
         showTimer: true,
         showSceneName: true,
-        showSegmentInfo: true,
         showResetButton: true,
         showPauseButton: true,
         // Keep other controls disabled by default
@@ -375,7 +372,6 @@
         timerLabelFontSize: 10,
         timerFontSize: 14,
         sceneNameFontSize: 11,
-        segmentFontSize: 10,
         resetButtonSize: 16,
         resetButtonPadding: 6,
         pauseButtonSize: 16,
@@ -430,7 +426,6 @@
         // Enable all header features for medium
         showTimer: true,
         showSceneName: true,
-        showSegmentInfo: true,
         showResetButton: true,
         showPauseButton: true,
         showBossOnlyButton: true,
@@ -443,7 +438,6 @@
         timerLabelFontSize: 12,
         timerFontSize: 18,
         sceneNameFontSize: 14,
-        segmentFontSize: 12,
         resetButtonSize: 20,
         resetButtonPadding: 8,
         pauseButtonSize: 20,
@@ -498,7 +492,6 @@
         // Enable all header features for large
         showTimer: true,
         showSceneName: true,
-        showSegmentInfo: true,
         showResetButton: true,
         showPauseButton: true,
         showBossOnlyButton: true,
@@ -511,7 +504,6 @@
         timerLabelFontSize: 14,
         timerFontSize: 24,
         sceneNameFontSize: 18,
-        segmentFontSize: 14,
         resetButtonSize: 26,
         resetButtonPadding: 10,
         pauseButtonSize: 26,
@@ -1591,33 +1583,6 @@
                       step={1}
                       label="场景名称字体大小"
                       description="场景名称字体大小"
-                      unit="px"
-                    />
-                  {/if}
-                </div>
-
-                <!-- Segment Info -->
-                <div class="space-y-2 pt-3 border-t border-border/30">
-                  <h3 class="text-sm font-semibold text-foreground">
-                    分段信息
-                  </h3>
-                  <SettingsSwitch
-                    bind:checked={
-                      SETTINGS.live.headerCustomization.state.showSegmentInfo
-                    }
-                    label="显示分段信息"
-                    description="显示首领/小怪分段指示"
-                  />
-                  {#if SETTINGS.live.headerCustomization.state.showSegmentInfo}
-                    <SettingsSlider
-                      bind:value={
-                        SETTINGS.live.headerCustomization.state.segmentFontSize
-                      }
-                      min={8}
-                      max={18}
-                      step={1}
-                      label="分段字体大小"
-                      description="分段徽标文字的字体大小"
                       unit="px"
                     />
                   {/if}

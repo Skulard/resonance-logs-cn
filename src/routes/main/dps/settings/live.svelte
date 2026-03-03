@@ -158,7 +158,6 @@
             label="缩写 DPS 数值"
             description="将 DPS 显示为 5k、50k 等"
           />
-          <!-- <SettingsSwitch bind:checked={SETTINGS.live.general.state.dungeonSegmentsEnabled} label="Dungeon Segments" description="Persist a dungeon-wide log with boss and trash segments" /> -->
           <SettingsSlider
             bind:value={SETTINGS.live.general.state.eventUpdateRateMs}
             label="刷新频率"
