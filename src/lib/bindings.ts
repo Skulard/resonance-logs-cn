@@ -165,6 +165,14 @@ async setBuffPriority(priorityBuffIds: number[]) : Promise<Result<null, string>>
     else return { status: "error", error: e  as any };
 }
 },
+async setBuffCounterRules(rules: CounterRule[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_buff_counter_rules", { rules }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Gets a list of recent encounters.
  * 
@@ -489,6 +497,9 @@ maxHp: number | null;
 isDefeated: boolean }
 export type BuffDefinition = { baseId: number; name: string; spriteFile: string; searchKeywords: string[] }
 export type BuffNameInfo = { baseId: number; name: string; hasSpriteFile: boolean }
+export type CounterAction = "reset" | "freeze" | "resetAndFreeze" | "startCount" | "noOp"
+export type CounterRule = { ruleId: number; trigger: CounterTrigger; linkedBuffId: number; threshold: number | null; onBuffAdd: CounterAction; onBuffRemove: CounterAction }
+export type CounterTrigger = { damageBySkillKey: number[] } | { damageBySkillKeySelfTarget: number[] } | "anyDamage"
 export type Device = { name: string; description: string | null }
 /**
  * Filters for querying encounters.

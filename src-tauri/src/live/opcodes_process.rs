@@ -58,6 +58,13 @@ pub struct SyncToMeDeltaResult {
     pub skill_cds: Vec<ParsedSkillCd>,
     pub buff_effect_bytes: Option<Vec<u8>>,
     pub fight_resources: Option<Vec<i64>>,
+    pub local_damage_events: Vec<LocalDamageEvent>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct LocalDamageEvent {
+    pub skill_key: i64,
+    pub target_uid: i64,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -506,7 +513,9 @@ pub fn process_sync_to_me_delta_info(
                 let _ = attr_store.set_temp_attr(id, value);
             }
         }
-        process_aoi_sync_delta(encounter, attr_store, base_delta);
+        if let Some(events) = process_aoi_sync_delta(encounter, attr_store, base_delta) {
+            result.local_damage_events = events;
+        }
     }
 
     result
@@ -624,7 +633,7 @@ pub fn process_aoi_sync_delta(
     encounter: &mut Encounter,
     attr_store: &mut EntityAttrStore,
     aoi_sync_delta: blueprotobuf::AoiSyncDelta,
-) -> Option<()> {
+) -> Option<Vec<LocalDamageEvent>> {
     let target_uuid = aoi_sync_delta.uuid?; // UUID =/= uid (have to >> 16)
     let target_uid = target_uuid >> 16;
 
@@ -661,9 +670,10 @@ pub fn process_aoi_sync_delta(
     }
 
     let Some(skill_effect) = aoi_sync_delta.skill_effects else {
-        return Some(()); // return ok since this variable usually doesn't exist
+        return Some(Vec::new()); // return ok since this variable usually doesn't exist
     };
 
+    let mut local_damage_events = Vec::new();
     // Process Damage
     for sync_damage_info in skill_effect.damages {
         // Timestamp for this event
@@ -696,6 +706,12 @@ pub fn process_aoi_sync_delta(
             sync_damage_info.hit_event_id,
         );
         let skill_key = damage_id;
+        if attacker_uid == encounter.local_player_uid {
+            local_damage_events.push(LocalDamageEvent {
+                skill_key,
+                target_uid,
+            });
+        }
         let flag = sync_damage_info.type_flag.unwrap_or_default();
         // Pre-calculate whether this target is recognized as a boss and local player id
         let is_boss_target = encounter
@@ -973,7 +989,7 @@ pub fn process_aoi_sync_delta(
     }
 
     encounter.time_last_combat_packet_ms = timestamp_ms;
-    Some(())
+    Some(local_damage_events)
 }
 
 fn decode_varint_i64(raw: &[u8]) -> Option<i64> {

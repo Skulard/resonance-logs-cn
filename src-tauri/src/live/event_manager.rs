@@ -1,6 +1,7 @@
 use crate::live::commands_models::{
-    BossHealth, BuffUpdateState, FightResourceState, HeaderInfo, LiveDataPayload, PanelAttrState,
-    RawEntityData, SkillCdState, to_raw_combat_stats, to_raw_skill_stats,
+    BossHealth, BuffUpdateState, CounterUpdateState, FightResourceState, HeaderInfo,
+    LiveDataPayload, PanelAttrState, RawEntityData, SkillCdState, to_raw_combat_stats,
+    to_raw_skill_stats,
 };
 use crate::live::entity_attr_store::EntityAttrStore;
 use crate::live::opcodes_models::{AttrType, Encounter, class};
@@ -107,6 +108,7 @@ pub enum OutboundEvent {
     },
     LiveData(LiveDataPayload),
     BuffUpdate(Vec<BuffUpdateState>),
+    BuffCounterUpdate(Vec<CounterUpdateState>),
     SkillCdUpdate(Vec<SkillCdState>),
     PanelAttrUpdate(Vec<PanelAttrState>),
     FightResourceUpdate(FightResourceState),
@@ -213,6 +215,11 @@ impl EventManager {
 
     pub fn emit_buff_update(&mut self, buffs: Vec<BuffUpdateState>) {
         self.outbound_events.push(OutboundEvent::BuffUpdate(buffs));
+    }
+
+    pub fn emit_buff_counter_update(&mut self, counters: Vec<CounterUpdateState>) {
+        self.outbound_events
+            .push(OutboundEvent::BuffCounterUpdate(counters));
     }
 
     pub fn emit_skill_cd_update(&mut self, cds: Vec<SkillCdState>) {

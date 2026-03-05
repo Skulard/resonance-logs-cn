@@ -109,6 +109,35 @@ export type BuffUpdatePayload = {
   buffs: BuffUpdateState[];
 };
 
+export type CounterUpdateState = {
+  ruleId: number;
+  linkedBuffId: number;
+  currentCount: number;
+  threshold: number | null;
+  isCounting: boolean;
+  linkedBuffActive: boolean;
+};
+
+export type BuffCounterUpdatePayload = {
+  counters: CounterUpdateState[];
+};
+
+export type CounterTrigger =
+  | { damageBySkillKey: number[] }
+  | { damageBySkillKeySelfTarget: number[] }
+  | "anyDamage";
+
+export type CounterAction = "reset" | "freeze" | "resetAndFreeze" | "startCount" | "noOp";
+
+export type CounterRule = {
+  ruleId: number;
+  trigger: CounterTrigger;
+  linkedBuffId: number;
+  threshold: number | null;
+  onBuffAdd: CounterAction;
+  onBuffRemove: CounterAction;
+};
+
 export type PanelAttrState = {
   attrId: number;
   value: number;
@@ -182,6 +211,11 @@ export const onBuffUpdate = (
   handler: (event: Event<BuffUpdatePayload>) => void
 ): Promise<UnlistenFn> => listen<BuffUpdatePayload>("buff-update", handler);
 
+export const onBuffCounterUpdate = (
+  handler: (event: Event<BuffCounterUpdatePayload>) => void
+): Promise<UnlistenFn> =>
+  listen<BuffCounterUpdatePayload>("buff-counter-update", handler);
+
 export const onPanelAttrUpdate = (
   handler: (event: Event<PanelAttrUpdatePayload>) => void
 ): Promise<UnlistenFn> =>
@@ -203,6 +237,9 @@ export const setEventUpdateRateMs = (rateMs: number): Promise<void> =>
 
 export const setMonitoredPanelAttrs = (attrIds: number[]): Promise<void> =>
   invoke("set_monitored_panel_attrs", { attrIds });
+
+export const setBuffCounterRules = (rules: CounterRule[]): Promise<void> =>
+  invoke("set_buff_counter_rules", { rules });
 
 // =========================
 // 模组计算器相关 API

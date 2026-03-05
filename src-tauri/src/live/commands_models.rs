@@ -264,6 +264,23 @@ pub struct BuffUpdatePayload {
     pub buffs: Vec<BuffUpdateState>,
 }
 
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CounterUpdateState {
+    pub rule_id: i32,
+    pub linked_buff_id: i32,
+    pub current_count: u32,
+    pub threshold: Option<u32>,
+    pub is_counting: bool,
+    pub linked_buff_active: bool,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BuffCounterUpdatePayload {
+    pub counters: Vec<CounterUpdateState>,
+}
+
 #[derive(serde::Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillCdUpdatePayload {

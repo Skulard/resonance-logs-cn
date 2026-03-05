@@ -2,6 +2,7 @@ pub mod buff_names;
 pub mod cd_calc;
 pub mod commands;
 pub mod commands_models;
+pub mod counter_tracker;
 pub mod damage_id;
 pub mod dungeon_dirty_blob;
 pub mod dungeon_log;

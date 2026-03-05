@@ -1,8 +1,9 @@
 use crate::database::{EncounterMetadata, PlayerNameEntry, now_ms, save_encounter};
 use crate::live::cd_calc::calculate_skill_cd;
 use crate::live::commands_models::{
-    BuffUpdateState, FightResourceState, PanelAttrState, SkillCdState,
+    BuffUpdateState, CounterUpdateState, FightResourceState, PanelAttrState, SkillCdState,
 };
+use crate::live::counter_tracker::{BuffCounterTracker, CounterRule};
 use crate::live::dungeon_log::{BattleStateMachine, EncounterResetReason};
 use crate::live::entity_attr_store::EntityAttrStore;
 use crate::live::event_manager::EventManager;
@@ -83,6 +84,7 @@ pub struct EntityMonitor {
     pub skill_cd_monitor: SkillCdMonitor,
     pub monitored_panel_attr_ids: Vec<i32>,
     pub fight_res_state: Option<FightResourceState>,
+    pub counter_tracker: BuffCounterTracker,
 }
 
 impl EntityMonitor {
@@ -93,6 +95,7 @@ impl EntityMonitor {
             skill_cd_monitor: SkillCdMonitor::new(),
             monitored_panel_attr_ids: Vec::new(),
             fight_res_state: None,
+            counter_tracker: BuffCounterTracker::default(),
         }
     }
 }
@@ -105,6 +108,26 @@ pub struct ActiveBuff {
     pub duration: i32,
     pub create_time: i64,
     pub source_config_id: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BuffChangeType {
+    Added,
+    Changed,
+    Removed,
+}
+
+#[derive(Debug, Clone)]
+pub struct BuffChangeEvent {
+    pub buff_uuid: i32,
+    pub base_id: i32,
+    pub change_type: BuffChangeType,
+}
+
+#[derive(Debug, Default)]
+pub struct BuffProcessResult {
+    pub update_payload: Option<Vec<BuffUpdateState>>,
+    pub changes: Vec<BuffChangeEvent>,
 }
 
 #[derive(Debug, Default)]
@@ -163,6 +186,7 @@ pub enum LiveControlCommand {
     SetMonitoredSkills(Vec<i32>),
     SetMonitorAllBuff(bool),
     SetBuffPriority(Vec<i32>),
+    SetBuffCounterRules(Vec<CounterRule>),
 }
 
 impl AppState {
@@ -306,6 +330,10 @@ fn emit_panel_attr_update_if_needed(state: &mut AppState, payload: Vec<PanelAttr
         return;
     }
     state.event_manager.emit_panel_attr_update(payload);
+}
+
+fn emit_buff_counter_update_if_needed(state: &mut AppState, payload: Vec<CounterUpdateState>) {
+    state.event_manager.emit_buff_counter_update(payload);
 }
 
 fn hydrate_entities_from_attr_store(state: &mut AppState) {
@@ -566,6 +594,9 @@ impl AppStateManager {
                 state.local_monitor.buff_monitor.priority_buff_ids = priority_buff_ids;
                 state.local_monitor.buff_monitor.buff_order_dirty = true;
             }
+            LiveControlCommand::SetBuffCounterRules(rules) => {
+                state.local_monitor.counter_tracker.set_rules(rules);
+            }
         }
     }
 
@@ -825,14 +856,34 @@ impl AppStateManager {
             state.event_manager.emit_fight_resource_update(new_state);
         }
 
+        let mut counter_dirty = false;
+        for damage_event in &result.local_damage_events {
+            counter_dirty |= state.local_monitor.counter_tracker.on_damage_event(
+                damage_event.skill_key,
+                damage_event.target_uid,
+                state.encounter.local_player_uid,
+            );
+        }
+
         if let Some(raw_bytes) = result.buff_effect_bytes {
-            if let Some(payload) = state
+            let buff_process_result = state
                 .local_monitor
                 .buff_monitor
-                .process_buff_effect_bytes(&raw_bytes, &mut state.server_clock_offset)
-            {
+                .process_buff_effect_bytes(&raw_bytes, &mut state.server_clock_offset);
+            if let Some(payload) = buff_process_result.update_payload {
                 state.event_manager.emit_buff_update(payload);
             }
+            counter_dirty |= state
+                .local_monitor
+                .counter_tracker
+                .on_buff_changes(&buff_process_result.changes);
+        }
+
+        if counter_dirty {
+            emit_buff_counter_update_if_needed(
+                state,
+                state.local_monitor.counter_tracker.build_payload(),
+            );
         }
 
         if !result.skill_cds.is_empty() {
@@ -858,10 +909,27 @@ impl AppStateManager {
             self.try_deferred_reset(state, has_damage, "SyncNearDeltaInfo");
         }
 
+        let mut counter_dirty = false;
         for aoi_sync_delta in sync_near_delta_info.delta_infos {
             // Missing fields are normal, no need to log
-            let _ =
-                process_aoi_sync_delta(&mut state.encounter, &mut state.attr_store, aoi_sync_delta);
+            if let Some(events) =
+                process_aoi_sync_delta(&mut state.encounter, &mut state.attr_store, aoi_sync_delta)
+            {
+                for event in &events {
+                    counter_dirty |= state.local_monitor.counter_tracker.on_damage_event(
+                        event.skill_key,
+                        event.target_uid,
+                        state.encounter.local_player_uid,
+                    );
+                }
+            }
+        }
+
+        if counter_dirty {
+            emit_buff_counter_update_if_needed(
+                state,
+                state.local_monitor.counter_tracker.build_payload(),
+            );
         }
     }
 
@@ -1088,6 +1156,10 @@ impl AppStateManager {
     pub fn set_buff_priority(&self, priority_buff_ids: Vec<i32>) -> Result<(), String> {
         self.send_control(LiveControlCommand::SetBuffPriority(priority_buff_ids))
     }
+
+    pub fn set_buff_counter_rules(&self, rules: Vec<CounterRule>) -> Result<(), String> {
+        self.send_control(LiveControlCommand::SetBuffCounterRules(rules))
+    }
 }
 
 impl BuffMonitor {
@@ -1095,12 +1167,11 @@ impl BuffMonitor {
         &mut self,
         raw_bytes: &[u8],
         server_clock_offset: &mut i64,
-    ) -> Option<Vec<BuffUpdateState>> {
-        if self.monitored_buff_ids.is_empty() && !self.monitor_all_buff {
-            return None;
-        }
-
-        let buff_effect_sync = BuffEffectSync::decode(raw_bytes).ok()?;
+    ) -> BuffProcessResult {
+        let mut changes = Vec::new();
+        let Ok(buff_effect_sync) = BuffEffectSync::decode(raw_bytes) else {
+            return BuffProcessResult::default();
+        };
         let now = now_ms();
 
         for buff_effect in buff_effect_sync.buff_effects {
@@ -1145,10 +1216,16 @@ impl BuffMonitor {
                             },
                         );
                         self.buff_order_dirty = true;
+                        changes.push(BuffChangeEvent {
+                            buff_uuid,
+                            base_id,
+                            change_type: BuffChangeType::Added,
+                        });
                     }
                 } else if effect_type == EBuffEffectLogicPbType::BuffEffectBuffChange as i32 {
                     if let Ok(change_info) = BuffChange::decode(raw.as_slice()) {
                         if let Some(entry) = self.active_buffs.get_mut(&buff_uuid) {
+                            let base_id = entry.base_id;
                             if let Some(layer) = change_info.layer {
                                 entry.layer = layer;
                             }
@@ -1158,15 +1235,26 @@ impl BuffMonitor {
                             if let Some(create_time) = change_info.create_time {
                                 entry.create_time = create_time;
                             }
+                            changes.push(BuffChangeEvent {
+                                buff_uuid,
+                                base_id,
+                                change_type: BuffChangeType::Changed,
+                            });
                         }
                     }
                 }
             }
 
-            if buff_effect.r#type == Some(EBuffEventType::BuffEventRemove as i32)
-                && self.active_buffs.remove(&buff_uuid).is_some()
-            {
-                self.buff_order_dirty = true;
+            if buff_effect.r#type == Some(EBuffEventType::BuffEventRemove as i32) {
+                let removed_buff = self.active_buffs.remove(&buff_uuid);
+                if let Some(removed_buff) = removed_buff {
+                    changes.push(BuffChangeEvent {
+                        buff_uuid,
+                        base_id: removed_buff.base_id,
+                        change_type: BuffChangeType::Removed,
+                    });
+                    self.buff_order_dirty = true;
+                }
             }
         }
 
@@ -1196,21 +1284,31 @@ impl BuffMonitor {
             self.buff_order_dirty = false;
         }
 
-        let payload: Vec<BuffUpdateState> = self
-            .ordered_buff_uuids
-            .iter()
-            .filter_map(|uuid| self.active_buffs.get(uuid))
-            .filter(|buff| self.monitor_all_buff || self.monitored_buff_ids.contains(&buff.base_id))
-            .map(|buff| BuffUpdateState {
-                buff_uuid: buff.buff_uuid,
-                base_id: buff.base_id,
-                layer: buff.layer,
-                duration_ms: buff.duration,
-                create_time_ms: buff.create_time.saturating_add(*server_clock_offset),
-                source_config_id: buff.source_config_id,
-            })
-            .collect();
-        Some(payload)
+        let update_payload = if self.monitored_buff_ids.is_empty() && !self.monitor_all_buff {
+            None
+        } else {
+            Some(
+                self.ordered_buff_uuids
+                    .iter()
+                    .filter_map(|uuid| self.active_buffs.get(uuid))
+                    .filter(|buff| {
+                        self.monitor_all_buff || self.monitored_buff_ids.contains(&buff.base_id)
+                    })
+                    .map(|buff| BuffUpdateState {
+                        buff_uuid: buff.buff_uuid,
+                        base_id: buff.base_id,
+                        layer: buff.layer,
+                        duration_ms: buff.duration,
+                        create_time_ms: buff.create_time.saturating_add(*server_clock_offset),
+                        source_config_id: buff.source_config_id,
+                    })
+                    .collect(),
+            )
+        };
+        BuffProcessResult {
+            update_payload,
+            changes,
+        }
     }
 }
 

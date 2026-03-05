@@ -1,0 +1,24 @@
+[
+  {
+    "ruleId": 1,
+    "name": "超然触发计数",
+    "trigger": {
+      "damageBySkillKeySelfTarget": [22140403]
+    },
+    "linkedBuffId": 2202671,
+    "threshold": 60,
+    "onBuffAdd": "reset",
+    "onBuffRemove": "noOp"
+  },
+  {
+    "ruleId": 2,
+    "name": "幻想冲击层数",
+    "trigger": {
+      "damageBySkillKey": [2203110203]
+    },
+    "linkedBuffId": 3002011,
+    "threshold": 30,
+    "onBuffAdd": "resetAndFreeze",
+    "onBuffRemove": "startCount"
+  }
+]

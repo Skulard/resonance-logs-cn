@@ -267,3 +267,14 @@ pub fn set_buff_priority(
     state_manager.set_buff_priority(priority_buff_ids)?;
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_buff_counter_rules(
+    rules: Vec<crate::live::counter_tracker::CounterRule>,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    info!("[buff-counter] set rules: {}", rules.len());
+    state_manager.set_buff_counter_rules(rules)?;
+    Ok(())
+}

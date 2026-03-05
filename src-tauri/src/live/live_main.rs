@@ -1,7 +1,8 @@
 use crate::live::state::{AppState, AppStateManager, StateEvent};
 use crate::live::{
     commands_models::{
-        BuffUpdatePayload, FightResourceUpdatePayload, PanelAttrUpdatePayload, SkillCdUpdatePayload,
+        BuffCounterUpdatePayload, BuffUpdatePayload, FightResourceUpdatePayload,
+        PanelAttrUpdatePayload, SkillCdUpdatePayload,
     },
     event_manager::{BossDeathPayload, EncounterUpdatePayload, SceneChangePayload},
     event_manager::{OutboundEvent, safe_emit_to},
@@ -410,6 +411,14 @@ fn flush_outbound_events(app_handle: &AppHandle, state: &mut AppState) {
                     crate::WINDOW_GAME_OVERLAY_LABEL,
                     "buff-update",
                     BuffUpdatePayload { buffs },
+                );
+            }
+            OutboundEvent::BuffCounterUpdate(counters) => {
+                safe_emit_to(
+                    app_handle,
+                    crate::WINDOW_GAME_OVERLAY_LABEL,
+                    "buff-counter-update",
+                    BuffCounterUpdatePayload { counters },
                 );
             }
             OutboundEvent::SkillCdUpdate(skill_cds) => {
