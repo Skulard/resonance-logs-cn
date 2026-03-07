@@ -86,11 +86,6 @@ impl BuffCounterTracker {
         }
         self.rules = rules;
         self.states = states;
-        info!(
-            target: "app::live",
-            "[buff-counter] states initialized: {}",
-            self.states.len()
-        );
     }
 
     pub fn on_damage_event(
@@ -115,27 +110,8 @@ impl BuffCounterTracker {
                 continue;
             };
             if state.is_counting {
-                let before = state.current_count;
                 state.current_count = state.current_count.saturating_add(1);
-                info!(
-                    target: "app::live",
-                    "[buff-counter] damage hit rule_id={} skill_key={} target_uid={} count={}=>{} threshold={:?}",
-                    state.rule_id,
-                    skill_key,
-                    target_uid,
-                    before,
-                    state.current_count,
-                    state.threshold
-                );
                 changed = true;
-            } else {
-                info!(
-                    target: "app::live",
-                    "[buff-counter] matched but frozen rule_id={} skill_key={} target_uid={}",
-                    state.rule_id,
-                    skill_key,
-                    target_uid
-                );
             }
         }
         changed
@@ -144,13 +120,6 @@ impl BuffCounterTracker {
     pub fn on_buff_changes(&mut self, changes: &[BuffChangeEvent]) -> bool {
         let mut changed = false;
         for change in changes {
-            info!(
-                target: "app::live",
-                "[buff-counter] buff change buff_uuid={} base_id={} change={:?}",
-                change.buff_uuid,
-                change.base_id,
-                change.change_type
-            );
             for rule in &self.rules {
                 if rule.linked_buff_id != change.base_id {
                     continue;
@@ -162,49 +131,17 @@ impl BuffCounterTracker {
                     BuffChangeType::Added => {
                         if !state.linked_buff_active {
                             state.linked_buff_active = true;
-                            info!(
-                                target: "app::live",
-                                "[buff-counter] linked buff active rule_id={} base_id={}",
-                                state.rule_id,
-                                state.linked_buff_id
-                            );
                             changed = true;
                         }
                         let action_changed = apply_action(state, rule.on_buff_add);
-                        if action_changed {
-                            info!(
-                                target: "app::live",
-                                "[buff-counter] on_add action applied rule_id={} action={:?} count={} counting={}",
-                                state.rule_id,
-                                rule.on_buff_add,
-                                state.current_count,
-                                state.is_counting
-                            );
-                        }
                         changed |= action_changed;
                     }
                     BuffChangeType::Removed => {
                         if state.linked_buff_active {
                             state.linked_buff_active = false;
-                            info!(
-                                target: "app::live",
-                                "[buff-counter] linked buff inactive rule_id={} base_id={}",
-                                state.rule_id,
-                                state.linked_buff_id
-                            );
                             changed = true;
                         }
                         let action_changed = apply_action(state, rule.on_buff_remove);
-                        if action_changed {
-                            info!(
-                                target: "app::live",
-                                "[buff-counter] on_remove action applied rule_id={} action={:?} count={} counting={}",
-                                state.rule_id,
-                                rule.on_buff_remove,
-                                state.current_count,
-                                state.is_counting
-                            );
-                        }
                         changed |= action_changed;
                     }
                     BuffChangeType::Changed => {}
@@ -229,6 +166,12 @@ impl BuffCounterTracker {
             .collect();
         rows.sort_by(|a, b| a.rule_id.cmp(&b.rule_id));
         rows
+    }
+
+    pub fn reset_counts(&mut self) {
+        for state in self.states.values_mut() {
+            state.current_count = 0;
+        }
     }
 }
 

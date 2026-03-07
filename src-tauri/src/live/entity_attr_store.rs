@@ -8,16 +8,12 @@ pub struct EntityAttrStore {
     temp_attrs: HashMap<i32, i32>,
     local_player_uid: i64,
     panel_attr_values: HashMap<i32, i32>,
-    dirty_attrs: Vec<(i64, AttrType)>,
-    dirty_temp_attrs: Vec<i32>,
     cd_dirty: bool,
     panel_dirty_attrs: Vec<PanelAttrState>,
 }
 
 #[derive(Debug, Default)]
 pub struct AttrChanges {
-    pub dirty_attrs: Vec<(i64, AttrType)>,
-    pub dirty_temp_attrs: Vec<i32>,
     pub cd_dirty: bool,
     pub panel_dirty_attrs: Vec<PanelAttrState>,
 }
@@ -29,8 +25,6 @@ impl EntityAttrStore {
             temp_attrs: HashMap::new(),
             local_player_uid: 0,
             panel_attr_values: HashMap::new(),
-            dirty_attrs: Vec::with_capacity(16),
-            dirty_temp_attrs: Vec::with_capacity(16),
             cd_dirty: false,
             panel_dirty_attrs: Vec::with_capacity(8),
         }
@@ -38,10 +32,6 @@ impl EntityAttrStore {
 
     pub fn set_local_uid(&mut self, uid: i64) {
         self.local_player_uid = uid;
-    }
-
-    pub fn local_uid(&self) -> i64 {
-        self.local_player_uid
     }
 
     pub fn set_attr(&mut self, uid: i64, attr_type: AttrType, value: AttrValue) -> bool {
@@ -55,7 +45,6 @@ impl EntityAttrStore {
             return false;
         }
         self.attrs.entry(uid).or_default().insert(attr_type, value);
-        self.dirty_attrs.push((uid, attr_type));
         if uid == self.local_player_uid
             && matches!(
                 attr_type,
@@ -86,7 +75,6 @@ impl EntityAttrStore {
         if prev == Some(value) {
             return false;
         }
-        self.dirty_temp_attrs.push(attr_id);
         self.cd_dirty = true;
         true
     }
@@ -154,18 +142,12 @@ impl EntityAttrStore {
         self.cd_dirty = true;
     }
 
-    pub fn clear_entity(&mut self, uid: i64) {
-        if let Some(prev) = self.attrs.remove(&uid) {
-            for attr_type in prev.keys().copied() {
-                self.dirty_attrs.push((uid, attr_type));
-            }
-        }
+    pub fn clear_all_entities(&mut self) {
+        self.attrs.clear();
     }
 
     pub fn drain_changes(&mut self) -> AttrChanges {
         AttrChanges {
-            dirty_attrs: std::mem::take(&mut self.dirty_attrs),
-            dirty_temp_attrs: std::mem::take(&mut self.dirty_temp_attrs),
             cd_dirty: std::mem::take(&mut self.cd_dirty),
             panel_dirty_attrs: std::mem::take(&mut self.panel_dirty_attrs),
         }

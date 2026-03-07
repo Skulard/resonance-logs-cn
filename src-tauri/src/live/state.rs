@@ -96,6 +96,15 @@ impl EntityMonitor {
             counter_tracker: BuffCounterTracker::default(),
         }
     }
+
+    fn clear_runtime_state(&mut self) {
+        self.buff_monitor.active_buffs.clear();
+        self.buff_monitor.ordered_buff_uuids.clear();
+        self.buff_monitor.buff_order_dirty = false;
+        self.skill_cd_monitor.skill_cd_map.clear();
+        self.fight_res_state = None;
+        self.counter_tracker.reset_counts();
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -530,6 +539,9 @@ impl AppStateManager {
         sync_container_data: blueprotobuf::SyncContainerData,
     ) {
         use crate::live::opcodes_process::process_sync_container_data;
+
+        state.attr_store.clear_all_entities();
+        state.local_monitor.clear_runtime_state();
 
         if process_sync_container_data(
             &mut state.encounter,
