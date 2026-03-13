@@ -56,6 +56,7 @@ pub fn run() {
             live::commands::set_event_update_rate_ms,
             live::commands::set_monitored_skills,
             live::commands::set_monitored_buffs,
+            live::commands::set_boss_monitored_buffs,
             live::commands::set_monitored_panel_attrs,
             live::commands::set_monitor_all_buff,
             live::commands::set_buff_counter_rules,

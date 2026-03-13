@@ -341,11 +341,9 @@ export function updateDisplay() {
           name,
           {
             baseId,
-            buffUuid: 0,
             durationMs: 0,
             createTimeMs: now,
             layer: 1,
-            sourceConfigId: 0,
           },
           now,
           true,

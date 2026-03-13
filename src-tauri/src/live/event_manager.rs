@@ -108,6 +108,10 @@ pub enum OutboundEvent {
     },
     LiveData(LiveDataPayload),
     BuffUpdate(Vec<BuffUpdateState>),
+    BossBuffUpdate {
+        boss_uid: i64,
+        buffs: Vec<BuffUpdateState>,
+    },
     BuffCounterUpdate(Vec<CounterUpdateState>),
     SkillCdUpdate(Vec<SkillCdState>),
     PanelAttrUpdate(Vec<PanelAttrState>),
@@ -215,6 +219,11 @@ impl EventManager {
 
     pub fn emit_buff_update(&mut self, buffs: Vec<BuffUpdateState>) {
         self.outbound_events.push(OutboundEvent::BuffUpdate(buffs));
+    }
+
+    pub fn emit_boss_buff_update(&mut self, boss_uid: i64, buffs: Vec<BuffUpdateState>) {
+        self.outbound_events
+            .push(OutboundEvent::BossBuffUpdate { boss_uid, buffs });
     }
 
     pub fn emit_buff_counter_update(&mut self, counters: Vec<CounterUpdateState>) {

@@ -81,6 +81,8 @@
         ...defaultLinkedBuffIds,
       ]),
     );
+    const bossGlobalBuffIds: number[] = [];
+    const bossSelfAppliedBuffIds = mergedBuffIds;
     const monitoredPanelAttrIds = monitoredPanelAttrs
       .filter((item) => item.enabled)
       .map((item) => item.attrId);
@@ -112,12 +114,17 @@
             await commands.setMonitorAllBuff(anyGroupMonitorAll);
             await commands.setMonitoredSkills(monitoredSkillIds);
             await commands.setMonitoredBuffs(mergedBuffIds);
+            await commands.setBossMonitoredBuffs(
+              bossGlobalBuffIds,
+              bossSelfAppliedBuffIds,
+            );
             await setMonitoredPanelAttrs(monitoredPanelAttrIds);
             await commands.setBuffCounterRules(enabledCounterRules);
           } else {
             await commands.setMonitorAllBuff(false);
             await commands.setMonitoredSkills([]);
             await commands.setMonitoredBuffs([]);
+            await commands.setBossMonitoredBuffs([], []);
             await setMonitoredPanelAttrs([]);
             await commands.setBuffCounterRules([]);
           }

@@ -105,6 +105,14 @@ async setMonitoredBuffs(buffBaseIds: number[]) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async setBossMonitoredBuffs(globalIds: number[], selfAppliedIds: number[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_boss_monitored_buffs", { globalIds, selfAppliedIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Sets the monitored panel attribute list for panel attribute updates.
  */
@@ -608,6 +616,8 @@ import {
 import * as TAURI_API_EVENT from "@tauri-apps/api/event";
 import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";
 
+void TAURI_CHANNEL;
+
 type __EventObj__<T> = {
 	listen: (
 		cb: TAURI_API_EVENT.EventCallback<T>,
@@ -658,3 +668,5 @@ function __makeEvents__<T extends Record<string, any>>(
 		},
 	);
 }
+
+void __makeEvents__;

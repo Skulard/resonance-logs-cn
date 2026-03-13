@@ -135,6 +135,21 @@ pub fn set_monitored_buffs(
     Ok(())
 }
 
+#[tauri::command]
+#[specta::specta]
+pub fn set_boss_monitored_buffs(
+    global_ids: Vec<i32>,
+    self_applied_ids: Vec<i32>,
+    state_manager: tauri::State<'_, AppStateManager>,
+) -> Result<(), String> {
+    info!(
+        "[boss-buff] set monitored buffs: global={:?} self_applied={:?}",
+        global_ids, self_applied_ids
+    );
+    state_manager.set_boss_monitored_buffs(global_ids, self_applied_ids)?;
+    Ok(())
+}
+
 /// Sets the monitored panel attribute list for panel attribute updates.
 #[tauri::command]
 #[specta::specta]

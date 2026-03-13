@@ -98,15 +98,18 @@ export type FightResourceUpdatePayload = {
 };
 
 export type BuffUpdateState = {
-  buffUuid: number;
   baseId: number;
   layer: number;
   durationMs: number;
   createTimeMs: number;
-  sourceConfigId: number;
 };
 
 export type BuffUpdatePayload = {
+  buffs: BuffUpdateState[];
+};
+
+export type BossBuffUpdatePayload = {
+  bossUid: number;
   buffs: BuffUpdateState[];
 };
 
@@ -212,6 +215,11 @@ export const onFightResUpdate = (
 export const onBuffUpdate = (
   handler: (event: Event<BuffUpdatePayload>) => void
 ): Promise<UnlistenFn> => listen<BuffUpdatePayload>("buff-update", handler);
+
+export const onBossBuffUpdate = (
+  handler: (event: Event<BossBuffUpdatePayload>) => void
+): Promise<UnlistenFn> =>
+  listen<BossBuffUpdatePayload>("boss-buff-update", handler);
 
 export const onBuffCounterUpdate = (
   handler: (event: Event<BuffCounterUpdatePayload>) => void

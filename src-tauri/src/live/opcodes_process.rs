@@ -954,4 +954,3 @@ fn process_monster_attrs(
         }
     }
 }
-

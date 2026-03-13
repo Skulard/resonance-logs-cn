@@ -1,5 +1,5 @@
 use crate::database::{EncounterMetadata, PlayerNameEntry, now_ms, save_encounter};
-use crate::live::buff_monitor::BuffMonitor;
+use crate::live::buff_monitor::{BossBuffMonitors, BuffMonitor};
 use crate::live::commands_models::{
     CounterUpdateState, FightResourceState, PanelAttrState, SkillCdState,
 };
@@ -55,6 +55,8 @@ pub struct AppState {
     pub event_manager: EventManager,
     /// Monitoring context for the local player.
     pub local_monitor: EntityMonitor,
+    /// Boss buff monitoring state and configuration.
+    pub boss_buff_monitors: BossBuffMonitors,
     /// Whether we've already handled the first scene change after startup.
     pub initial_scene_change_handled: bool,
     /// Event update rate in milliseconds (default: 200ms). Controls how often events are emitted to frontend.
@@ -106,6 +108,10 @@ pub enum LiveControlCommand {
     TogglePauseEncounter,
     SetEventUpdateRateMs(u64),
     SetMonitoredBuffs(Vec<i32>),
+    SetBossMonitoredBuffs {
+        global_ids: Vec<i32>,
+        self_applied_ids: Vec<i32>,
+    },
     SetMonitoredPanelAttrs(Vec<i32>),
     SetMonitoredSkills(Vec<i32>),
     SetMonitorAllBuff(bool),
@@ -122,6 +128,7 @@ impl AppState {
             encounter: Encounter::default(),
             event_manager: EventManager::new(),
             local_monitor: EntityMonitor::new(0),
+            boss_buff_monitors: BossBuffMonitors::new(),
             initial_scene_change_handled: false,
             event_update_rate_ms: 200,
             attr_store: EntityAttrStore::with_capacity(256),
@@ -390,7 +397,16 @@ impl AppStateManager {
                 state.event_update_rate_ms = rate_ms;
             }
             LiveControlCommand::SetMonitoredBuffs(buff_base_ids) => {
-                state.local_monitor.buff_monitor.monitored_buff_ids = buff_base_ids;
+                state.local_monitor.buff_monitor.monitored_buff_ids =
+                    buff_base_ids.into_iter().collect();
+            }
+            LiveControlCommand::SetBossMonitoredBuffs {
+                global_ids,
+                self_applied_ids,
+            } => {
+                state
+                    .boss_buff_monitors
+                    .set_config(global_ids, self_applied_ids);
             }
             LiveControlCommand::SetMonitoredPanelAttrs(attr_ids) => {
                 state.local_monitor.monitored_panel_attr_ids = attr_ids;
@@ -527,6 +543,7 @@ impl AppStateManager {
 
         state.attr_store.clear_all_entities();
         state.local_monitor.clear_runtime_state();
+        state.boss_buff_monitors.clear();
 
         if process_sync_container_data(
             &mut state.encounter,
@@ -698,10 +715,11 @@ impl AppStateManager {
         }
 
         if let Some(raw_bytes) = result.buff_effect_bytes {
-            let buff_process_result = state
-                .local_monitor
-                .buff_monitor
-                .process_buff_effect_bytes(&raw_bytes, &mut state.server_clock_offset);
+            let buff_process_result = state.local_monitor.buff_monitor.process_buff_effect_bytes(
+                &raw_bytes,
+                &mut state.server_clock_offset,
+                state.encounter.local_player_uid,
+            );
             if let Some(payload) = buff_process_result.update_payload {
                 state.event_manager.emit_buff_update(payload);
             }
@@ -742,7 +760,10 @@ impl AppStateManager {
         }
 
         let mut counter_dirty = false;
-        for aoi_sync_delta in sync_near_delta_info.delta_infos {
+        for mut aoi_sync_delta in sync_near_delta_info.delta_infos {
+            let target_uid = aoi_sync_delta.uuid.map(|uuid| uuid >> 16);
+            let buff_bytes = aoi_sync_delta.buff_effect.take();
+
             // Missing fields are normal, no need to log
             if let Some(events) =
                 process_aoi_sync_delta(&mut state.encounter, &mut state.attr_store, aoi_sync_delta)
@@ -753,6 +774,29 @@ impl AppStateManager {
                         event.target_uid,
                         state.encounter.local_player_uid,
                     );
+                }
+            }
+
+            if let (Some(target_uid), Some(raw_bytes)) = (target_uid, buff_bytes) {
+                let is_boss = state
+                    .encounter
+                    .entity_uid_to_entity
+                    .get(&target_uid)
+                    .map(|entity| entity.is_boss())
+                    .unwrap_or(false);
+                if is_boss {
+                    let local_player_uid = state.encounter.local_player_uid;
+                    let monitor = state.boss_buff_monitors.monitor_for(target_uid);
+                    let buff_process_result = monitor.process_buff_effect_bytes(
+                        &raw_bytes,
+                        &mut state.server_clock_offset,
+                        local_player_uid,
+                    );
+                    if let Some(payload) = buff_process_result.update_payload {
+                        state
+                            .event_manager
+                            .emit_boss_buff_update(target_uid, payload);
+                    }
                 }
             }
         }
@@ -961,6 +1005,17 @@ impl AppStateManager {
         self.send_control(LiveControlCommand::SetMonitoredBuffs(buff_base_ids))
     }
 
+    pub fn set_boss_monitored_buffs(
+        &self,
+        global_ids: Vec<i32>,
+        self_applied_ids: Vec<i32>,
+    ) -> Result<(), String> {
+        self.send_control(LiveControlCommand::SetBossMonitoredBuffs {
+            global_ids,
+            self_applied_ids,
+        })
+    }
+
     pub fn set_monitored_panel_attrs(&self, attr_ids: Vec<i32>) -> Result<(), String> {
         self.send_control(LiveControlCommand::SetMonitoredPanelAttrs(attr_ids))
     }
@@ -985,7 +1040,7 @@ impl AppStateManager {
             return;
         }
 
-        let mut payload = crate::live::event_manager::generate_live_data_payload(
+        let payload = crate::live::event_manager::generate_live_data_payload(
             &state.encounter,
             &state.attr_store,
         );

@@ -236,17 +236,22 @@ pub struct SkillCdState {
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BuffUpdateState {
-    pub buff_uuid: i32,
     pub base_id: i32,
     pub layer: i32,
     pub duration_ms: i32,
     pub create_time_ms: i64,
-    pub source_config_id: i32,
 }
 
 #[derive(serde::Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BuffUpdatePayload {
+    pub buffs: Vec<BuffUpdateState>,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct BossBuffUpdatePayload {
+    pub boss_uid: i64,
     pub buffs: Vec<BuffUpdateState>,
 }
 
