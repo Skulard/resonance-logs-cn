@@ -1,6 +1,6 @@
 <script lang="ts">
   import ChevronDown from "virtual:icons/lucide/chevron-down";
-  import BuffSearchResultGrid from "./BuffSearchResultGrid.svelte";
+  import BuffSearchResultGrid from "$lib/components/BuffSearchResultGrid.svelte";
   import type {
     BuffCategoryDefinition,
     BuffCategoryKey,
@@ -13,6 +13,8 @@
     TextBuffPanelDisplayMode,
     TextBuffPanelStyle,
   } from "$lib/settings-store";
+
+  type BuffGroupUpdateHandler = (updater: (curr: BuffGroup) => BuffGroup) => void;
 
   interface Props {
     buffSearch: string;
@@ -159,7 +161,7 @@
   }: Props = $props();
 </script>
 
-{#snippet buffGroupLayoutControls(group, onUpdate)}
+{#snippet buffGroupLayoutControls(group: BuffGroup, onUpdate: BuffGroupUpdateHandler)}
   <div class="grid grid-cols-2 gap-3">
     <label class="text-xs text-muted-foreground">
       图标大小: {group.iconSize}px
@@ -171,7 +173,7 @@
         step="1"
         value={group.iconSize}
         oninput={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             iconSize: Number((event.currentTarget as HTMLInputElement).value),
           }))}
@@ -187,7 +189,7 @@
         step="1"
         value={group.columns}
         oninput={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             columns: Number((event.currentTarget as HTMLInputElement).value),
           }))}
@@ -203,7 +205,7 @@
         step="1"
         value={group.rows}
         oninput={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             rows: Number((event.currentTarget as HTMLInputElement).value),
           }))}
@@ -219,7 +221,7 @@
         step="1"
         value={group.gap}
         oninput={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             gap: Number((event.currentTarget as HTMLInputElement).value),
           }))}
@@ -232,7 +234,7 @@
         type="checkbox"
         checked={group.showName}
         onchange={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             showName: (event.currentTarget as HTMLInputElement).checked,
           }))}
@@ -244,7 +246,7 @@
         type="checkbox"
         checked={group.showTime}
         onchange={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             showTime: (event.currentTarget as HTMLInputElement).checked,
           }))}
@@ -256,7 +258,7 @@
         type="checkbox"
         checked={group.showLayer}
         onchange={(event) =>
-          onUpdate((curr) => ({
+          onUpdate((curr: BuffGroup) => ({
             ...curr,
             showLayer: (event.currentTarget as HTMLInputElement).checked,
           }))}
@@ -871,7 +873,7 @@
               </div>
               <div class="space-y-2">
                 <div class="text-xs text-muted-foreground">分组布局</div>
-                {@render buffGroupLayoutControls(group, (updater) => updateBuffGroup(group.id, updater))}
+                {@render buffGroupLayoutControls(group, (updater: (curr: BuffGroup) => BuffGroup) => updateBuffGroup(group.id, updater))}
               </div>
             </div>
           </div>

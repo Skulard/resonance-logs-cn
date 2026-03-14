@@ -1,0 +1,84 @@
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  onBossBuffUpdate,
+  type BuffUpdateState,
+} from "$lib/api";
+import {
+  onGlobalPointerMove,
+  onGlobalPointerUp,
+  setMonsterEditMode,
+  setMonsterOverlayWindow,
+} from "./monster-layout.svelte.js";
+import { updateMonsterDisplay } from "./monster-display.svelte.js";
+import { monsterRuntime } from "./monster-runtime.svelte.js";
+
+function mapBossBuffs(buffs: BuffUpdateState[]) {
+  const next = new Map<number, BuffUpdateState>();
+  for (const buff of buffs) {
+    const existing = next.get(buff.baseId);
+    if (!existing || buff.createTimeMs >= existing.createTimeMs) {
+      next.set(buff.baseId, buff);
+    }
+  }
+  return next;
+}
+
+export function initMonsterOverlay() {
+  if (monsterRuntime.cleanup) return monsterRuntime.cleanup;
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  monsterRuntime.isMounted = true;
+  monsterRuntime.isInitialized = true;
+  setMonsterOverlayWindow(getCurrentWindow());
+
+  document.documentElement.style.setProperty(
+    "background",
+    "transparent",
+    "important",
+  );
+  document.body.style.setProperty("background", "transparent", "important");
+
+  void setMonsterEditMode(false);
+
+  const unlistenEditToggle = listen("monster-overlay-edit-toggle", () => {
+    void setMonsterEditMode(!monsterRuntime.isEditing);
+  });
+  const unlistenBossBuff = onBossBuffUpdate((event) => {
+    const next = new Map(monsterRuntime.bossBuffMap);
+    const mappedBuffs = mapBossBuffs(event.payload.buffs);
+    if (mappedBuffs.size > 0) {
+      next.set(event.payload.bossUid, mappedBuffs);
+    } else {
+      next.delete(event.payload.bossUid);
+    }
+    monsterRuntime.bossBuffMap = next;
+  });
+
+  window.addEventListener("pointermove", onGlobalPointerMove);
+  window.addEventListener("pointerup", onGlobalPointerUp);
+  monsterRuntime.rafId = requestAnimationFrame(updateMonsterDisplay);
+
+  monsterRuntime.cleanup = () => {
+    monsterRuntime.isMounted = false;
+    monsterRuntime.isInitialized = false;
+    monsterRuntime.dragState = null;
+    monsterRuntime.resizeState = null;
+    monsterRuntime.bossBuffMap = new Map();
+    monsterRuntime.bossSections = [];
+    unlistenEditToggle.then((fn) => fn());
+    unlistenBossBuff.then((fn) => fn());
+    window.removeEventListener("pointermove", onGlobalPointerMove);
+    window.removeEventListener("pointerup", onGlobalPointerUp);
+    if (monsterRuntime.rafId) {
+      cancelAnimationFrame(monsterRuntime.rafId);
+      monsterRuntime.rafId = null;
+    }
+    setMonsterOverlayWindow(null);
+    monsterRuntime.cleanup = null;
+  };
+
+  return monsterRuntime.cleanup;
+}

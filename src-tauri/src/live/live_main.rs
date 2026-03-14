@@ -407,7 +407,7 @@ fn flush_outbound_events(app_handle: &AppHandle, state: &mut AppState) {
             OutboundEvent::BossBuffUpdate { boss_uid, buffs } => {
                 safe_emit_to(
                     app_handle,
-                    crate::WINDOW_GAME_OVERLAY_LABEL,
+                    crate::WINDOW_MONSTER_OVERLAY_LABEL,
                     "boss-buff-update",
                     BossBuffUpdatePayload { boss_uid, buffs },
                 );

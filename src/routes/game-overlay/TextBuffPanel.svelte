@@ -1,6 +1,6 @@
 <script lang="ts">
   import ClassicTextBuffRow from "./ClassicTextBuffRow.svelte";
-  import TextBuffRow from "./TextBuffRow.svelte";
+  import TextBuffRow from "$lib/components/TextBuffRow.svelte";
   import {
     getGroupPosition,
     getGroupScale,

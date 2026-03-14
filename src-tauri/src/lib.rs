@@ -29,6 +29,8 @@ pub const WINDOW_LIVE_LABEL: &str = "live";
 pub const WINDOW_MAIN_LABEL: &str = "main";
 /// The label for the unified game overlay window.
 pub const WINDOW_GAME_OVERLAY_LABEL: &str = "game-overlay";
+/// The label for the monster overlay window.
+pub const WINDOW_MONSTER_OVERLAY_LABEL: &str = "monster-overlay";
 
 /// Keeps the non-blocking tracing appender worker alive for the lifetime of the process.
 /// If this guard is dropped, file logging may stop flushing.
