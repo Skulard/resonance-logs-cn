@@ -4294,8 +4294,6 @@ pub struct DungeonSyncData {
     pub dungeon_raid_info: ::core::option::Option<DungeonRaidInfo>,
     #[prost(message, optional, tag = "24")]
     pub dungeon_area_info: ::core::option::Option<DungeonAreaInfo>,
-    #[prost(enumeration = "EErrorCode", optional, tag = "25")]
-    pub err_code: ::core::option::Option<i32>,
 }
 #[derive(specta::Type, Clone, PartialEq, ::prost::Message)]
 pub struct DungeonTitle {
