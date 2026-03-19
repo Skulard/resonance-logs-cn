@@ -285,7 +285,7 @@
     "LowerLimit": 0,
     "UpperLimit": 9999999,
     "IsSyncClient": true,
-    "AttrDesc": "Trigger Lucky Block, the Defense effect of this block +{*tempAttr.up*}.<br>Lucky Block: When attacked, both block and luck take effect.",
+    "AttrDesc": "触发幸运格挡，本次格挡的伤害减免效果提升{*tempAttr.up*}。<br>幸运格挡：受到攻击时，格挡和幸运同时生效。",
     "AttrIcon": ""
   },
   "90022": {
@@ -3813,8 +3813,8 @@
   },
   "90318": {
     "Id": 90318,
-    "Name": "血槽消耗归0",
-    "Desc": "血槽消耗归0",
+    "Name": "血槽消耗减少",
+    "Desc": "血槽消耗减少",
     "AttrType": 302,
     "LogicType": 2,
     "AttrParams": [
@@ -3870,7 +3870,7 @@
     "LowerLimit": -99999,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "移动速度+{*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon21"
   },
   "92001": {
@@ -3926,6 +3926,21 @@
     "LogicType": 3,
     "AttrParams": [
       3
+    ],
+    "LowerLimit": 0,
+    "UpperLimit": 99999,
+    "IsSyncClient": true,
+    "AttrDesc": "全子弹大小",
+    "AttrIcon": ""
+  },
+  "92005": {
+    "Id": 92005,
+    "Name": "职业技能冷却加速",
+    "Desc": "职业技能冷却加速",
+    "AttrType": 103,
+    "LogicType": 3,
+    "AttrParams": [
+      1010
     ],
     "LowerLimit": 0,
     "UpperLimit": 99999,
@@ -4780,7 +4795,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "幻梦强度（已失效）{*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98983": {
@@ -4793,7 +4808,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S3赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98984": {
@@ -4806,7 +4821,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S4赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98985": {
@@ -4819,7 +4834,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S5赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98986": {
@@ -4832,7 +4847,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S6赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98987": {
@@ -4845,7 +4860,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S7赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98988": {
@@ -4858,7 +4873,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S8赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98989": {
@@ -4871,7 +4886,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "",
+    "AttrDesc": "S9赛季强度 {*tempAttr.un*}",
     "AttrIcon": "ui/atlas/weaponhero/new/common_icon01"
   },
   "98991": {
@@ -5066,7 +5081,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "Adaptive Strength/Intellect/Agility +{*tempAttr.un*}",
+    "AttrDesc": "自适应力量/智力/敏捷+{*tempAttr.un*}",
     "AttrIcon": ""
   },
   "99006": {
@@ -5079,7 +5094,7 @@
     "LowerLimit": 0,
     "UpperLimit": 99999,
     "IsSyncClient": true,
-    "AttrDesc": "Adaptive ATK/MATK +{*tempAttr.un*}",
+    "AttrDesc": "自适应物攻/魔攻+{*tempAttr.un*}",
     "AttrIcon": ""
   },
   "99010": {

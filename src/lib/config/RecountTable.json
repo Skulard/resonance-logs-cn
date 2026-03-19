@@ -1405,7 +1405,7 @@
   },
   "171": {
     "Id": 171,
-    "RecountName": "花语回升",
+    "RecountName": "生机涌动",
     "DamageId": []
   },
   "172": {
@@ -1459,7 +1459,7 @@
   },
   "176": {
     "Id": 176,
-    "RecountName": "森语G10-森之祈愿",
+    "RecountName": "森之祈愿",
     "DamageId": [
       22140601
     ]
@@ -1964,7 +1964,7 @@
   },
   "235": {
     "Id": 235,
-    "RecountName": "荒川之寂灭（存疑）",
+    "RecountName": "荒火星流",
     "DamageId": []
   },
   "236": {
@@ -1983,12 +1983,12 @@
   },
   "238": {
     "Id": 238,
-    "RecountName": "无尽之炎魔（存疑）",
+    "RecountName": "爆裂之怒",
     "DamageId": []
   },
   "239": {
     "Id": 239,
-    "RecountName": "炎舞的最后一斩",
+    "RecountName": "迷炎狂舞·终式",
     "DamageId": [
       116220101
     ]
@@ -2746,7 +2746,7 @@
   },
   "331": {
     "Id": 331,
-    "RecountName": "稳态G8",
+    "RecountName": "巨刃稳态G2",
     "DamageId": [
       2305921003
     ]
