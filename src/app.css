@@ -37,6 +37,12 @@
   --accent-foreground: oklch(0.8853 0 0);
   --destructive: oklch(0.6591 0.1530 22.1703);
   --destructive-foreground: oklch(1.0000 0 0);
+  --tier-1: oklch(0.62 0.01 260);
+  --tier-2: oklch(0.71 0.03 220);
+  --tier-3: oklch(0.75 0.11 152);
+  --tier-4: oklch(0.73 0.12 246);
+  --tier-5: oklch(0.72 0.17 314);
+  --tier-6: oklch(0.83 0.16 89);
   --border: oklch(0.3290 0 0);
   --input: oklch(0.3092 0 0);
   --ring: oklch(0.7058 0 0);
