@@ -323,9 +323,3 @@ pub struct FightResourceState {
 pub struct FightResourceUpdatePayload {
     pub fight_res: FightResourceState,
 }
-
-#[derive(serde::Deserialize, Debug, Clone)]
-pub struct ModuleCalcProgressPayload {
-    pub processed: u64,
-    pub total: u64,
-}

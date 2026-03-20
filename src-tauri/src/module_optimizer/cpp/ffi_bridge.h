@@ -17,8 +17,6 @@ struct ModuleSolutionFfi;
 struct GpuSupportInfo;
 struct ProgressInfoFfi;
 
-::std::int32_t test_cuda_ffi();
-::std::int32_t test_opencl_ffi();
 GpuSupportInfo check_gpu_support_ffi();
 ProgressInfoFfi get_progress_ffi();
 void reset_progress_ffi();

@@ -116,7 +116,7 @@ static std::unordered_map<int, int> to_map(
     return result;
 }
 
-::std::int32_t test_cuda_ffi() {
+static ::std::int32_t test_cuda() {
 #ifdef USE_CUDA
     return ::TestCuda();
 #else
@@ -124,7 +124,7 @@ static std::unordered_map<int, int> to_map(
 #endif
 }
 
-::std::int32_t test_opencl_ffi() {
+static ::std::int32_t test_opencl() {
 #ifdef USE_OPENCL
     return ::TestOpenCL();
 #else
@@ -137,11 +137,11 @@ GpuSupportInfo check_gpu_support_ffi() {
     static std::once_flag flag;
 
     std::call_once(flag, [] {
-        cached_info.cuda_available = test_cuda_ffi() == 1;
+        cached_info.cuda_available = test_cuda() == 1;
 #ifdef USE_CUDA
         ResetCudaDevice();
 #endif
-        cached_info.opencl_available = test_opencl_ffi() == 1;
+        cached_info.opencl_available = test_opencl() == 1;
     });
 
     return cached_info;

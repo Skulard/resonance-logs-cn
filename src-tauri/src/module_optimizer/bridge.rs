@@ -44,10 +44,6 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("resonance-logs-cn/src/module_optimizer/cpp/ffi_bridge.h");
 
-        fn test_cuda_ffi() -> i32;
-
-        fn test_opencl_ffi() -> i32;
-
         fn check_gpu_support_ffi() -> GpuSupportInfo;
 
         fn get_progress_ffi() -> ProgressInfoFfi;
