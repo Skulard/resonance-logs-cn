@@ -561,12 +561,11 @@
 
   function backToHistory() {
 
-    // Return to the history list while preserving pagination state.
-    const sp = new URLSearchParams();
-    const listPage = $page.url.searchParams.get("page");
-    const listPageSize = $page.url.searchParams.get("pageSize");
-    if (listPage !== null) sp.set("page", listPage);
-    if (listPageSize !== null) sp.set("pageSize", listPageSize);
+    // Return to the history list while preserving list state.
+    const sp = new URLSearchParams($page.url.searchParams);
+    sp.delete("charId");
+    sp.delete("skillType");
+    sp.delete("targetUid");
     const qs = sp.toString();
     goto(`/main/dps/history${qs ? `?${qs}` : ""}`);
   }

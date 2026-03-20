@@ -32,6 +32,14 @@
 		const sp = new URLSearchParams();
 		sp.set("page", String(next.page));
 		sp.set("pageSize", String(next.pageSize));
+		if (selectedBosses.length > 0) sp.set("bosses", selectedBosses.join(","));
+		if (selectedPlayerNames.length > 0) {
+			sp.set("players", selectedPlayerNames.join(","));
+		}
+		if (selectedEncounters.length > 0) {
+			sp.set("encounters", selectedEncounters.join(","));
+		}
+		if (showFavoritesOnly) sp.set("fav", "1");
 		return sp;
 	}
 
@@ -259,15 +267,35 @@
 		loadBossNames();
 		loadSceneNames();
 
+		const sp = $pageStore.url.searchParams;
+
 		// Restore pagination from query params (e.g. /main/dps/history?page=4&pageSize=10)
 		const initialPage = parseNonNegativeInt(
-			$pageStore.url.searchParams.get("page"),
+			sp.get("page"),
 			0,
 		);
 		const initialPageSize = parseNonNegativeInt(
-			$pageStore.url.searchParams.get("pageSize"),
+			sp.get("pageSize"),
 			pageSize,
 		);
+
+		const bossesParam = sp.get("bosses");
+		if (bossesParam) {
+			selectedBosses = bossesParam.split(",").filter(Boolean);
+		}
+
+		const playersParam = sp.get("players");
+		if (playersParam) {
+			selectedPlayerNames = playersParam.split(",").filter(Boolean);
+		}
+
+		const encountersParam = sp.get("encounters");
+		if (encountersParam) {
+			selectedEncounters = encountersParam.split(",").filter(Boolean);
+		}
+
+		showFavoritesOnly = sp.get("fav") === "1";
+
 		pageSize = initialPageSize;
 		loadEncounters(initialPage);
 	});
