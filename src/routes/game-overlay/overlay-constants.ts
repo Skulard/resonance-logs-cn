@@ -4,9 +4,16 @@ import type {
   OverlayVisibility,
 } from "$lib/settings-store";
 
-export const RESOURCE_SCALES: Record<number, number> = {
-  4: 100,
-  5: 100,
+export const RESOURCE_SCALES_BY_CLASS: Record<string, Record<number, number>> = {
+  wind_knight: {
+    4: 100,
+    5: 100,
+  },
+  frost_mage: {
+    4: 100,
+    5: 100,
+  },
+  stormblade: {},
 };
 
 export const DEFAULT_RESOURCE_VALUES_BY_CLASS: Record<
@@ -15,6 +22,7 @@ export const DEFAULT_RESOURCE_VALUES_BY_CLASS: Record<
 > = {
   wind_knight: { 4: 130, 5: 130, 6: 6, 7: 6 },
   frost_mage: { 4: 0, 5: 125, 6: 0, 7: 4 },
+  stormblade: { 4: 0, 5: 400, 6: 0, 7: 6 },
 };
 
 export const DEFAULT_OVERLAY_POSITIONS: OverlayPositions = {

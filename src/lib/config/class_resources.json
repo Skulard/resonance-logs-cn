@@ -36,5 +36,24 @@
       "imageOn": "/images/frost_mage/res/main_snow_on_7752257676452734961.png",
       "imageOff": "/images/frost_mage/res/main_snow_off_3542757998136383818.png"
     }
+  ],
+  "stormblade": [
+    {
+      "type": "bar",
+      "label": "刀意",
+      "currentIndex": 4,
+      "maxIndex": 5,
+      "imageOn": "/images/stormblade/res/main_thunder_bar_on_-2759248337309027904.png",
+      "imageOff": "/images/stormblade/res/main_thunder_bar_off_667491608039266660.png",
+      "buffBaseIds": [43201, 43101]
+    },
+    {
+      "type": "charges",
+      "label": "雷之印",
+      "currentIndex": 6,
+      "maxIndex": 7,
+      "imageOn": "/images/stormblade/res/main_thunder_on_2474287416440235716.png",
+      "imageOff": "/images/stormblade/res/main_thunder_off_2990056487819530159.png"
+    }
   ]
 }

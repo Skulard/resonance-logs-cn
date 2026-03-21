@@ -183,5 +183,125 @@
         "imagePath": "/images/frost_mage/skill/weapon_mz-01_ult_6019181098229944913.png"
       }
     ]
+  },
+  "stormblade": {
+    "classKey": "stormblade",
+    "className": "雷影剑士",
+    "classId": 1,
+    "defaultMonitoredBuffIds": [510072, 2200601, 2200431, 2200641, 2200121, 2200051, 2200231, 43201, 43101],
+    "derivations": [
+      {
+        "sourceSkillId": 1701,
+        "derivedSkillId": 1737,
+        "triggerBuffBaseId": 2200601,
+        "derivedName": "神罚之镰",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_tf01_5544459437439574016.png"
+      },
+      {
+        "sourceSkillId": 1718,
+        "derivedSkillId": 1736,
+        "triggerBuffBaseId": 2200431,
+        "derivedName": "神影斩",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_tf04_2216604320468850874.png"
+      },
+      {
+        "sourceSkillId": 1717,
+        "derivedSkillId": 1735,
+        "triggerBuffBaseId": 2200431,
+        "derivedName": "坠龙闪",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_tf03_9184457839467773652.png"
+      },
+      {
+        "sourceSkillId": 1715,
+        "derivedSkillId": 1738,
+        "triggerBuffBaseId": 2200641,
+        "derivedName": "缭乱兜割",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_kx01_7335935797506849194.png"
+      },
+      {
+        "sourceSkillId": 1714,
+        "derivedSkillId": 1734,
+        "triggerBuffBaseId": 2200121,
+        "derivedName": "雷切",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_tf05_6590570411655847853.png"
+      },
+      {
+        "sourceSkillId": 1705,
+        "derivedSkillId": 1739,
+        "triggerBuffBaseId": 2200051,
+        "derivedName": "看破斩",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_kx01_01_-6871866389254527098.png"
+      },
+      {
+        "sourceSkillId": 1724,
+        "derivedSkillId": 1742,
+        "triggerBuffBaseId": 2200231,
+        "derivedName": "霹雳升龙斩",
+        "derivedImagePath": "/images/stormblade/skill/weapon_tdl-01_kx06_1_-301087840969471084.png"
+      }
+    ],
+    "skills": [
+      {
+        "skillId": 1730,
+        "name": "无穷雷霆之力",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx07_5011786851491862633.png"
+      },
+      {
+        "skillId": 1731,
+        "name": "千雷闪影之意",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx08_1310086718716380591.png"
+      },
+      {
+        "skillId": 1713,
+        "name": "极诣·大破灭连斩",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_ult_3879339252261768906.png"
+      },
+      {
+        "skillId": 1720,
+        "name": "心眼",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx05_4628201897339635824.png"
+      },
+      {
+        "skillId": 1701,
+        "name": "我流刀法·诸恶",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_skill_atk01_-4614215089673209881.png"
+      },
+      {
+        "skillId": 1718,
+        "name": "飞雷神",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx03_-1967467053699191033.png"
+      },
+      {
+        "skillId": 1719,
+        "name": "镰车",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx04_7614798060604092699.png"
+      },
+      {
+        "skillId": 1717,
+        "name": "一闪",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx02_2266075239079587707.png"
+      },
+      {
+        "skillId": 1715,
+        "name": "月影",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_tg02_-857792875300157552.png"
+      },
+      {
+        "skillId": 1714,
+        "name": "居合斩",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_tg01_5475604808947104442.png"
+      },
+      {
+        "skillId": 1705,
+        "name": "超高出力",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_skill_101_1_924013895986459687.png",
+        "maxCharges": 5
+      },
+      {
+        "skillId": 1724,
+        "name": "霹雳连斩",
+        "imagePath": "/images/stormblade/skill/weapon_tdl-01_kx06_-1183548700792331979.png"
+      }
+    ]
   }
 }

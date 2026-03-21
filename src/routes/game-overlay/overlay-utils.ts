@@ -22,7 +22,7 @@ import {
   DEFAULT_OVERLAY_SIZES,
   DEFAULT_OVERLAY_VISIBILITY,
   DEFAULT_RESOURCE_VALUES_BY_CLASS,
-  RESOURCE_SCALES,
+  RESOURCE_SCALES_BY_CLASS,
 } from "./overlay-constants";
 import type {
   CustomPanelDisplayRow,
@@ -505,7 +505,7 @@ export function getResourceValue(
   if (raw === undefined) {
     return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[index] ?? 0;
   }
-  const scale = RESOURCE_SCALES[index] ?? 1;
+  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[index] ?? 1;
   return Math.floor(raw / scale);
 }
 
@@ -518,7 +518,7 @@ export function getResourcePreciseValue(
   if (raw === undefined) {
     return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[index] ?? 0;
   }
-  const scale = RESOURCE_SCALES[index] ?? 1;
+  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[index] ?? 1;
   return raw / scale;
 }
 

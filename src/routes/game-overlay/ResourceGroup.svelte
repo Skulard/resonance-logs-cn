@@ -45,8 +45,9 @@
         {@const curPrecise = getResourcePreciseValue(res.currentIndex)}
         {@const maxPrecise = Math.max(1, getResourcePreciseValue(res.maxIndex))}
         {@const energyPercent = Math.min(100, Math.max(0, (curPrecise / maxPrecise) * 100))}
-        {@const buffPercent = res.buffBaseId
-          ? (durationPercents.get(res.buffBaseId) ?? 0)
+        {@const effectiveBuffIds = res.buffBaseIds ?? (res.buffBaseId ? [res.buffBaseId] : [])}
+        {@const buffPercent = effectiveBuffIds.length
+          ? Math.max(0, ...effectiveBuffIds.map((id) => durationPercents.get(id) ?? 0))
           : energyPercent}
         <div class="res-bar-container">
           <img src={res.imageOff} alt={res.label} class="res-bar-bg" />

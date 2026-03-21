@@ -33,6 +33,7 @@ export type ResourceDefinition = {
   imageOn: string;
   imageOff: string;
   buffBaseId?: number;
+  buffBaseIds?: number[];
 };
 
 export type SpecialBuffDisplay = {
