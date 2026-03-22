@@ -1,3 +1,4 @@
+pub mod bootstrap_snapshot;
 pub mod buff_monitor;
 pub mod commands;
 pub mod commands_models;

@@ -1,4 +1,5 @@
 use crate::database::{EncounterMetadata, PlayerNameEntry, now_ms, save_encounter};
+use crate::live::bootstrap_snapshot::MonitorRuntimeSnapshot;
 use crate::live::buff_monitor::{BossBuffMonitors, BuffMonitor};
 use crate::live::commands_models::{
     CounterUpdateState, FightResourceState, PanelAttrState, SkillCdState, TrainingDummyState,
@@ -116,6 +117,7 @@ impl EntityMonitor {
 pub enum LiveControlCommand {
     StateEvent(StateEvent),
     TogglePauseEncounter,
+    ApplyMonitorRuntimeSnapshot(MonitorRuntimeSnapshot),
     StartTrainingDummy {
         monster_id: TrainingDummyMonsterId,
     },
@@ -449,6 +451,9 @@ impl AppStateManager {
                 let paused = state.encounter.is_encounter_paused;
                 state.set_encounter_paused(!paused);
             }
+            LiveControlCommand::ApplyMonitorRuntimeSnapshot(snapshot) => {
+                self.apply_monitor_runtime_snapshot_with_state(state, snapshot);
+            }
             LiveControlCommand::StartTrainingDummy { monster_id } => {
                 state.training_dummy.arm(monster_id);
             }
@@ -512,6 +517,89 @@ impl AppStateManager {
                 state.local_monitor.counter_tracker.set_rules(rules);
             }
         }
+    }
+
+    pub(crate) fn apply_monitor_runtime_snapshot_with_state(
+        &self,
+        state: &mut AppState,
+        snapshot: MonitorRuntimeSnapshot,
+    ) {
+        let MonitorRuntimeSnapshot {
+            live,
+            skill,
+            monster,
+        } = snapshot;
+
+        info!(
+            target: "app::live",
+            "[runtime-monitor] applying snapshot: event_update_rate_ms={} skill_enabled={} monster_enabled={}",
+            live.event_update_rate_ms,
+            skill.enabled,
+            monster.enabled
+        );
+        info!(
+            target: "app::live",
+            "[monitor-buff] set monitorAllBuff: {:?}",
+            skill.monitor_all_buff
+        );
+        info!(
+            target: "app::live",
+            "[skill-cd] set monitored skills: {:?}",
+            skill.monitored_skill_ids
+        );
+        info!(
+            target: "app::live",
+            "[buff] set monitored buffs: {:?}",
+            skill.monitored_buff_ids
+        );
+        info!(
+            target: "app::live",
+            "[panel-attr] set monitored attrs: {:?}",
+            skill.monitored_panel_attr_ids
+        );
+        info!(
+            target: "app::live",
+            "[buff-counter] set rules: {}",
+            skill.buff_counter_rules.len()
+        );
+        info!(
+            target: "app::live",
+            "[boss-buff] set monitored buffs: global={:?} self_applied={:?}",
+            monster.global_ids,
+            monster.self_applied_ids
+        );
+
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetEventUpdateRateMs(live.event_update_rate_ms),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetMonitorAllBuff(skill.monitor_all_buff),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetMonitoredSkills(skill.monitored_skill_ids),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetMonitoredBuffs(skill.monitored_buff_ids),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetMonitoredPanelAttrs(skill.monitored_panel_attr_ids),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetBuffCounterRules(skill.buff_counter_rules),
+        );
+        self.apply_control_command(
+            state,
+            LiveControlCommand::SetBossMonitoredBuffs {
+                global_ids: monster.global_ids,
+                self_applied_ids: monster.self_applied_ids,
+            },
+        );
     }
 
     fn on_server_change(&self, state: &mut AppState) {
@@ -1071,8 +1159,11 @@ impl AppStateManager {
             .is_some()
     }
 
-    pub fn set_event_update_rate_ms(&self, rate_ms: u64) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetEventUpdateRateMs(rate_ms))
+    pub fn apply_monitor_runtime_snapshot(
+        &self,
+        snapshot: MonitorRuntimeSnapshot,
+    ) -> Result<(), String> {
+        self.send_control(LiveControlCommand::ApplyMonitorRuntimeSnapshot(snapshot))
     }
 
     pub fn start_training_dummy(&self, monster_id: TrainingDummyMonsterId) -> Result<(), String> {
@@ -1083,36 +1174,6 @@ impl AppStateManager {
         self.send_control(LiveControlCommand::StopTrainingDummy)
     }
 
-    pub fn set_monitored_buffs(&self, buff_base_ids: Vec<i32>) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetMonitoredBuffs(buff_base_ids))
-    }
-
-    pub fn set_boss_monitored_buffs(
-        &self,
-        global_ids: Vec<i32>,
-        self_applied_ids: Vec<i32>,
-    ) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetBossMonitoredBuffs {
-            global_ids,
-            self_applied_ids,
-        })
-    }
-
-    pub fn set_monitored_panel_attrs(&self, attr_ids: Vec<i32>) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetMonitoredPanelAttrs(attr_ids))
-    }
-
-    pub fn set_monitored_skills(&self, skill_level_ids: Vec<i32>) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetMonitoredSkills(skill_level_ids))
-    }
-
-    pub fn set_monitor_all_buff(&self, monitor_all_buff: bool) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetMonitorAllBuff(monitor_all_buff))
-    }
-
-    pub fn set_buff_counter_rules(&self, rules: Vec<CounterRule>) -> Result<(), String> {
-        self.send_control(LiveControlCommand::SetBuffCounterRules(rules))
-    }
 }
 
 impl AppStateManager {

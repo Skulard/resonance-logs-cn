@@ -79,78 +79,9 @@ async stopTrainingDummy() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Sets the event update rate in milliseconds.
- * 
- * # Arguments
- * 
- * * `rate_ms` - The update rate in milliseconds (clamped to 50-2000ms range).
- * * `state_manager` - The state manager.
- * 
- * # Returns
- * 
- * * `Result<(), String>` - An empty result.
- */
-async setEventUpdateRateMs(rateMs: number) : Promise<Result<null, string>> {
+async saveAndApplyMonitorRuntimeSnapshot(snapshot: MonitorRuntimeSnapshot) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("set_event_update_rate_ms", { rateMs }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Sets the monitored skill list for skill CD updates.
- */
-async setMonitoredSkills(skillLevelIds: number[]) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_monitored_skills", { skillLevelIds }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Sets the monitored buff list for buff updates.
- */
-async setMonitoredBuffs(buffBaseIds: number[]) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_monitored_buffs", { buffBaseIds }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async setBossMonitoredBuffs(globalIds: number[], selfAppliedIds: number[]) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_boss_monitored_buffs", { globalIds, selfAppliedIds }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Sets the monitored panel attribute list for panel attribute updates.
- */
-async setMonitoredPanelAttrs(attrIds: number[]) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_monitored_panel_attrs", { attrIds }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async setMonitorAllBuff(monitorAllBuff: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_monitor_all_buff", { monitorAllBuff }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async setBuffCounterRules(rules: CounterRule[]) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_buff_counter_rules", { rules }) };
+    return { status: "ok", data: await TAURI_INVOKE("save_and_apply_monitor_runtime_snapshot", { snapshot }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -568,9 +499,12 @@ remoteEncounterId: number | null;
 isFavorite: boolean }
 export type GpuSupport = { cuda_available: boolean; opencl_available: boolean }
 export type HistoryEntityData = { uid: number; name: string; classId: number; classSpec: number; className: string; classSpecName: string; abilityScore: number; seasonStrength: number; damage: RawCombatStats; damageBossOnly: RawCombatStats; healing: RawCombatStats; taken: RawCombatStats; dmgSkills: Partial<{ [key in number]: RawSkillStats }>; healSkills: Partial<{ [key in number]: RawSkillStats }>; takenSkills: Partial<{ [key in number]: RawSkillStats }>; dmgPerTarget: PerTargetStats[]; healPerTarget: PerTargetStats[] }
+export type LiveRuntimeSnapshot = { eventUpdateRateMs: number }
 export type ModuleInfo = { name: string; config_id: number; uuid: number; quality: number; parts: ModulePart[] }
 export type ModulePart = { id: number; name: string; value: number }
 export type ModuleSolution = { modules: ModuleInfo[]; score: number; attr_breakdown: Partial<{ [key in string]: number }> }
+export type MonitorRuntimeSnapshot = { live: LiveRuntimeSnapshot; skill: SkillRuntimeSnapshot; monster: MonsterRuntimeSnapshot }
+export type MonsterRuntimeSnapshot = { enabled: boolean; globalIds: number[]; selfAppliedIds: number[] }
 export type PerTargetStats = { targetUid: number; targetName: string; totalValue: number; damage: RawCombatStats; skills: Partial<{ [key in number]: RawSkillStats }> }
 /**
  * The result of a query for player names.
@@ -614,11 +548,13 @@ export type SceneNamesResult = {
  * A list of scene names.
  */
 names: string[] }
+export type SkillRuntimeSnapshot = { enabled: boolean; monitoredSkillIds: number[]; monitoredBuffIds: number[]; monitorAllBuff: boolean; monitoredPanelAttrIds: number[]; buffCounterRules: CounterRule[] }
 
 /** tauri-specta globals **/
 
 import {
 	invoke as TAURI_INVOKE,
+	Channel as TAURI_CHANNEL,
 } from "@tauri-apps/api/core";
 import * as TAURI_API_EVENT from "@tauri-apps/api/event";
 import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";
@@ -639,7 +575,7 @@ export type Result<T, E> =
 	| { status: "ok"; data: T }
 	| { status: "error"; error: E };
 
-export function __makeEvents__<T extends Record<string, any>>(
+function __makeEvents__<T extends Record<string, any>>(
 	mappings: Record<keyof T, string>,
 ) {
 	return new Proxy(

@@ -268,15 +268,6 @@ export const getEncounterEntitiesRaw = (
 ): Promise<Result<RawEntityData[], string>> =>
   commands.getEncounterEntitiesRaw(encounterId);
 
-export const setEventUpdateRateMs = (rateMs: number): Promise<void> =>
-  invoke("set_event_update_rate_ms", { rateMs });
-
-export const setMonitoredPanelAttrs = (attrIds: number[]): Promise<void> =>
-  invoke("set_monitored_panel_attrs", { attrIds });
-
-export const setBuffCounterRules = (rules: CounterRule[]): Promise<void> =>
-  invoke("set_buff_counter_rules", { rules });
-
 // =========================
 // 模组计算器相关 API
 // =========================

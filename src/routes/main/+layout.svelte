@@ -8,11 +8,12 @@
   import { listen, type UnlistenFn } from "@tauri-apps/api/event";
   import { goto } from "$app/navigation";
   import { SETTINGS } from '$lib/settings-store';
-  import { commands, type CounterRule } from "$lib/bindings";
-  import { setMonitoredPanelAttrs } from "$lib/api";
-  import { expandBuffSelection } from "$lib/config/buff-name-table";
   import { applyCustomFonts } from "$lib/font-loader";
-  import { getCounterRules, getDefaultMonitoredBuffIds } from "$lib/skill-mappings";
+  import {
+    buildMonitorRuntimeSnapshot,
+    createMonitorRuntimeSnapshotSignature,
+    saveAndApplyMonitorRuntimeSnapshot,
+  } from "$lib/runtime-monitor-sync";
   import { onMount } from 'svelte';
   import ToolSidebar from "./tool-sidebar.svelte";
   import ChangelogModal from '$lib/components/ChangelogModal.svelte';
@@ -27,121 +28,36 @@
     })();
   });
 
-  function getActiveSkillMonitorProfile() {
-    const profiles = SETTINGS.skillMonitor.state.profiles;
-    if (profiles.length === 0) return null;
-    const index = Math.min(
-      Math.max(SETTINGS.skillMonitor.state.activeProfileIndex, 0),
-      profiles.length - 1,
-    );
-    return profiles[index];
-  }
-
-  let lastMonitorSyncKey = "";
+  let lastRuntimeSnapshotKey = "";
+  let runtimeSnapshotInitialized = false;
   let lastOverlayVisibleState: boolean | null = null;
-  let lastMonsterMonitorSyncKey = "";
   let lastMonsterOverlayVisibleState: boolean | null = null;
-  let monitorSyncTimer: ReturnType<typeof setTimeout> | null = null;
-  let monsterSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  let runtimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
   $effect(() => {
-    const enabled = SETTINGS.skillMonitor.state.enabled;
-    const activeProfile = getActiveSkillMonitorProfile();
-    const selectedClass = activeProfile?.selectedClass ?? "wind_knight";
-    const monitoredSkillIds = activeProfile?.monitoredSkillIds ?? [];
-    const monitoredSkillDurationIds =
-      activeProfile?.monitoredSkillDurationIds ?? [];
-    const mergedSkillIds = Array.from(
-      new Set([...monitoredSkillIds, ...monitoredSkillDurationIds]),
-    );
-    const monitoredBuffIds = expandBuffSelection(
-      activeProfile?.monitoredBuffIds ?? [],
-      activeProfile?.monitoredBuffCategories,
-    );
-    const monitoredPanelAttrs = activeProfile?.monitoredPanelAttrs ?? [];
-    const customPanelEntries = activeProfile?.customPanelGroups?.length
-      ? activeProfile.customPanelGroups.flatMap((group) => group.entries ?? [])
-      : (activeProfile?.inlineBuffEntries ?? []);
-    const inlineCounterRuleIds = customPanelEntries
-      .filter((entry) => entry.sourceType === "counter")
-      .map((entry) => entry.sourceId);
-    const buffDisplayMode = activeProfile?.buffDisplayMode ?? "individual";
-    const buffGroups = activeProfile?.buffGroups ?? [];
-    const individualAllGroup = activeProfile?.individualMonitorAllGroup ?? null;
-    const anyGroupMonitorAll =
-      (buffDisplayMode === "grouped" && buffGroups.some((group) => group.monitorAll))
-      || (buffDisplayMode === "individual" && !!individualAllGroup);
-    const groupBuffIds =
-      buffDisplayMode === "grouped"
-        ? buffGroups.flatMap((group) => (group.monitorAll ? [] : group.buffIds))
-        : [];
-    const inlineBuffIds = customPanelEntries
-      .filter((entry) => entry.sourceType === "buff")
-      .map((entry) => entry.sourceId);
-    const activeCounterRuleIds = inlineCounterRuleIds;
-    const counterLinkedBuffIds = getCounterRules()
-      .filter((rule) => activeCounterRuleIds.includes(rule.ruleId))
-      .map((rule) => rule.linkedBuffId);
-    const defaultLinkedBuffIds = getDefaultMonitoredBuffIds(selectedClass);
-    const mergedBuffIds = Array.from(
-      new Set([
-        ...monitoredBuffIds,
-        ...groupBuffIds,
-        ...inlineBuffIds,
-        ...counterLinkedBuffIds,
-        ...defaultLinkedBuffIds,
-      ]),
-    );
-    const monitoredPanelAttrIds = monitoredPanelAttrs
-      .filter((item) => item.enabled)
-      .map((item) => item.attrId);
-    const enabledCounterRules: CounterRule[] = getCounterRules()
-      .filter((rule) => activeCounterRuleIds.includes(rule.ruleId))
-      .map((rule) => ({
-        ruleId: rule.ruleId,
-        trigger: rule.trigger,
-        linkedBuffId: rule.linkedBuffId,
-        threshold: rule.threshold,
-        onBuffAdd: rule.onBuffAdd,
-        onBuffRemove: rule.onBuffRemove,
-      }));
-    const monitorSyncKey = JSON.stringify({
-      enabled,
-      mergedSkillIds,
-      mergedBuffIds,
-      monitoredPanelAttrIds,
-      anyGroupMonitorAll,
-      activeCounterRuleIds,
-    });
+    const runtimeSnapshot = buildMonitorRuntimeSnapshot();
+    const runtimeSnapshotKey = createMonitorRuntimeSnapshotSignature(runtimeSnapshot);
 
-    if (monitorSyncKey !== lastMonitorSyncKey) {
-      if (monitorSyncTimer) {
-        clearTimeout(monitorSyncTimer);
+    if (!runtimeSnapshotInitialized) {
+      runtimeSnapshotInitialized = true;
+      lastRuntimeSnapshotKey = runtimeSnapshotKey;
+    } else if (runtimeSnapshotKey !== lastRuntimeSnapshotKey) {
+      if (runtimeSyncTimer) {
+        clearTimeout(runtimeSyncTimer);
       }
-      monitorSyncTimer = setTimeout(() => {
+      runtimeSyncTimer = setTimeout(() => {
         void (async () => {
           try {
-            lastMonitorSyncKey = monitorSyncKey;
-            if (enabled) {
-              await commands.setMonitorAllBuff(anyGroupMonitorAll);
-              await commands.setMonitoredSkills(mergedSkillIds);
-              await commands.setMonitoredBuffs(mergedBuffIds);
-              await setMonitoredPanelAttrs(monitoredPanelAttrIds);
-              await commands.setBuffCounterRules(enabledCounterRules);
-            } else {
-              await commands.setMonitorAllBuff(false);
-              await commands.setMonitoredSkills([]);
-              await commands.setMonitoredBuffs([]);
-              await setMonitoredPanelAttrs([]);
-              await commands.setBuffCounterRules([]);
-            }
+            lastRuntimeSnapshotKey = runtimeSnapshotKey;
+            await saveAndApplyMonitorRuntimeSnapshot(runtimeSnapshot);
           } catch (error) {
-            console.error("[skill-monitor] failed to sync monitor state", error);
+            console.error("[runtime-monitor] failed to sync runtime snapshot", error);
           }
         })();
       }, 50);
     }
 
+    const enabled = SETTINGS.skillMonitor.state.enabled;
     void (async () => {
       try {
         const overlayWindow = await WebviewWindow.getByLabel("game-overlay");
@@ -164,37 +80,6 @@
 
   $effect(() => {
     const enabled = SETTINGS.monsterMonitor.state.enabled;
-    const monitoredBuffIds = SETTINGS.monsterMonitor.state.monitoredBuffIds;
-    const selfAppliedBuffIds = SETTINGS.monsterMonitor.state.selfAppliedBuffIds;
-    const monsterMonitorSyncKey = JSON.stringify({
-      enabled,
-      monitoredBuffIds,
-      selfAppliedBuffIds,
-    });
-
-    if (monsterMonitorSyncKey !== lastMonsterMonitorSyncKey) {
-      if (monsterSyncTimer) {
-        clearTimeout(monsterSyncTimer);
-      }
-      monsterSyncTimer = setTimeout(() => {
-        void (async () => {
-          try {
-            lastMonsterMonitorSyncKey = monsterMonitorSyncKey;
-            if (enabled) {
-              await commands.setBossMonitoredBuffs(
-                monitoredBuffIds,
-                selfAppliedBuffIds,
-              );
-            } else {
-              await commands.setBossMonitoredBuffs([], []);
-            }
-          } catch (error) {
-            console.error("[monster-monitor] failed to sync monster monitor state", error);
-          }
-        })();
-      }, 50);
-    }
-
     void (async () => {
       try {
         const monsterOverlayWindow = await WebviewWindow.getByLabel("monster-overlay");
@@ -300,13 +185,9 @@
 
     // Cleanup on unmount
     return () => {
-      if (monitorSyncTimer) {
-        clearTimeout(monitorSyncTimer);
-        monitorSyncTimer = null;
-      }
-      if (monsterSyncTimer) {
-        clearTimeout(monsterSyncTimer);
-        monsterSyncTimer = null;
+      if (runtimeSyncTimer) {
+        clearTimeout(runtimeSyncTimer);
+        runtimeSyncTimer = null;
       }
       if (navigateUnlisten) {
         navigateUnlisten();

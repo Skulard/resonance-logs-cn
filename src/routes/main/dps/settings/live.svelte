@@ -4,7 +4,6 @@
   import SettingsSelect from "./settings-select.svelte";
   import SettingsSlider from "./settings-slider.svelte";
   import { SETTINGS } from "$lib/settings-store";
-  import { setEventUpdateRateMs } from "$lib/api";
   import ChevronDown from "virtual:icons/lucide/chevron-down";
   import {
     liveDpsPlayerColumns,
@@ -16,21 +15,6 @@
   } from "$lib/column-data";
 
   const SETTINGS_CATEGORY = "live";
-
-  // Sync settings that require backend calls only after the component is mounted
-  // to avoid redundant invokes while the settings layout mounts all tabs at once.
-  import { onMount } from "svelte";
-  let _mounted = false;
-  onMount(() => {
-    _mounted = true;
-  });
-
-  $effect(() => {
-    if (_mounted) {
-      void setEventUpdateRateMs(SETTINGS.live.general.state.eventUpdateRateMs);
-    }
-  });
-
   // Collapsible section state - all collapsed by default
   let expandedSections = $state({
     general: false,

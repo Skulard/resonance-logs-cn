@@ -1,4 +1,5 @@
 use crate::WINDOW_LIVE_LABEL;
+use crate::live::bootstrap_snapshot::{MonitorRuntimeSnapshot, save_monitor_runtime_snapshot};
 use crate::live::state::{AppStateManager, StateEvent};
 use crate::live::training_dummy::TrainingDummyMonsterId;
 use log::info;
@@ -119,120 +120,15 @@ pub fn stop_training_dummy(state_manager: tauri::State<'_, AppStateManager>) -> 
     Ok(())
 }
 
-/// Sets the event update rate in milliseconds.
-///
-/// # Arguments
-///
-/// * `rate_ms` - The update rate in milliseconds (clamped to 50-2000ms range).
-/// * `state_manager` - The state manager.
-///
-/// # Returns
-///
-/// * `Result<(), String>` - An empty result.
 #[tauri::command]
 #[specta::specta]
-pub fn set_event_update_rate_ms(
-    rate_ms: u64,
+pub fn save_and_apply_monitor_runtime_snapshot(
+    snapshot: MonitorRuntimeSnapshot,
+    app_handle: tauri::AppHandle,
     state_manager: tauri::State<'_, AppStateManager>,
 ) -> Result<(), String> {
-    // Clamp to reasonable range: 50ms to 2000ms
-    let clamped = rate_ms.clamp(50, 2000);
-    state_manager.set_event_update_rate_ms(clamped)?;
-    info!("Event update rate set to: {}ms", clamped);
-    Ok(())
-}
-
-/// Sets the monitored buff list for buff updates.
-#[tauri::command]
-#[specta::specta]
-pub fn set_monitored_buffs(
-    buff_base_ids: Vec<i32>,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    info!(
-        target: "app::live",
-        "[buff] set monitored buffs: {:?}",
-        buff_base_ids
-    );
-    state_manager.set_monitored_buffs(buff_base_ids)?;
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_boss_monitored_buffs(
-    global_ids: Vec<i32>,
-    self_applied_ids: Vec<i32>,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    info!(
-        target: "app::live",
-        "[boss-buff] set monitored buffs: global={:?} self_applied={:?}",
-        global_ids, self_applied_ids
-    );
-    state_manager.set_boss_monitored_buffs(global_ids, self_applied_ids)?;
-    Ok(())
-}
-
-/// Sets the monitored panel attribute list for panel attribute updates.
-#[tauri::command]
-#[specta::specta]
-pub fn set_monitored_panel_attrs(
-    attr_ids: Vec<i32>,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    info!(
-        target: "app::live",
-        "[panel-attr] set monitored attrs: {:?}",
-        attr_ids
-    );
-    state_manager.set_monitored_panel_attrs(attr_ids)?;
-    Ok(())
-}
-
-/// Sets the monitored skill list for skill CD updates.
-#[tauri::command]
-#[specta::specta]
-pub fn set_monitored_skills(
-    skill_level_ids: Vec<i32>,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    if skill_level_ids.len() > 10 {
-        return Err("最多监控10个技能".to_string());
-    }
-
-    info!(
-        target: "app::live",
-        "[skill-cd] set monitored skills: {:?}",
-        skill_level_ids
-    );
-
-    state_manager.set_monitored_skills(skill_level_ids)?;
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_monitor_all_buff(
-    monitor_all_buff: bool,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    info!(
-        target: "app::live",
-        "[monitor-buff] set monitorAllBuff: {:?}",
-        monitor_all_buff
-    );
-    state_manager.set_monitor_all_buff(monitor_all_buff)?;
-    Ok(())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn set_buff_counter_rules(
-    rules: Vec<crate::live::counter_tracker::CounterRule>,
-    state_manager: tauri::State<'_, AppStateManager>,
-) -> Result<(), String> {
-    info!(target: "app::live", "[buff-counter] set rules: {}", rules.len());
-    state_manager.set_buff_counter_rules(rules)?;
+    let snapshot = snapshot.normalize()?;
+    save_monitor_runtime_snapshot(&app_handle, &snapshot)?;
+    state_manager.apply_monitor_runtime_snapshot(snapshot)?;
     Ok(())
 }
