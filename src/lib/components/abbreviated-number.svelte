@@ -4,23 +4,27 @@
    */
   let {
     num = 0,
+    decimalPlaces = 1,
     suffixFontSize,
     suffixColor,
   }: {
     num: number;
+    decimalPlaces?: number;
     suffixFontSize?: number | undefined;
     suffixColor?: string | undefined;
   } = $props();
 
-  function abbreviateNumberSplit(n: number): [string, string] {
-    if (n >= 1e3 && n < 1e6) return [(n / 1e3).toFixed(1), "k"];
-    if (n >= 1e6 && n < 1e9) return [(n / 1e6).toFixed(1), "m"];
-    if (n >= 1e9 && n < 1e12) return [(n / 1e9).toFixed(1), "b"];
-    if (n >= 1e12) return [(n / 1e12).toFixed(1), "t"];
+  function abbreviateNumberSplit(n: number, dp: number): [string, string] {
+    if (n >= 1e3 && n < 1e6) return [(n / 1e3).toFixed(dp), "k"];
+    if (n >= 1e6 && n < 1e9) return [(n / 1e6).toFixed(dp), "m"];
+    if (n >= 1e9 && n < 1e12) return [(n / 1e9).toFixed(dp), "b"];
+    if (n >= 1e12) return [(n / 1e12).toFixed(dp), "t"];
     else return [n.toFixed(0), ""];
   }
 
-  let abbreviatedNumberTuple = $derived(abbreviateNumberSplit(num));
+  let abbreviatedNumberTuple = $derived(
+    abbreviateNumberSplit(num, decimalPlaces),
+  );
   let fullNumberString = $derived(num.toLocaleString());
 
   let suffixStyle = $derived(

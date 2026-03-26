@@ -143,6 +143,17 @@
             label="缩写 DPS 数值"
             description="将 DPS 显示为 5k、50k 等"
           />
+          <SettingsSelect
+            bind:selected={SETTINGS.live.general.state.abbreviatedDecimalPlaces}
+            label="缩写小数位数"
+            description="设置玩家表与技能明细中的 DPS/HPS/TPS 等缩写数值保留的小数位数"
+            values={[
+              { label: "1位 (1.2m)", value: 1 },
+              { label: "2位 (1.23m)", value: 2 },
+              { label: "3位 (1.234m)", value: 3 },
+              { label: "4位 (1.2345m)", value: 4 },
+            ]}
+          />
           <SettingsSlider
             bind:value={SETTINGS.live.general.state.eventUpdateRateMs}
             label="刷新频率"

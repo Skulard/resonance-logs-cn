@@ -27,7 +27,6 @@
   // Use live context general settings (history pages should rely on their own components)
   let SETTINGS_YOUR_NAME = $derived(SETTINGS.live.general.state.showYourName);
   let SETTINGS_OTHERS_NAME = $derived(SETTINGS.live.general.state.showOthersName);
-
   // Derived helpers
   const isYou = $derived(name?.includes("You") ?? false);
   const classDisplay = $derived(

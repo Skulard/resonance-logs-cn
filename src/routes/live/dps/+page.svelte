@@ -58,6 +58,9 @@
 
   // Table customization settings
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+  let abbreviatedDecimalPlaces = $derived(
+    SETTINGS.live.general.state.abbreviatedDecimalPlaces ?? 1,
+  );
   let customThemeColors = $derived(
     SETTINGS.accessibility.state.customThemeColors,
   );
@@ -211,6 +214,7 @@
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber
                     num={player.totalDmg}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
@@ -221,6 +225,7 @@
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber
                     num={player.bossDmg}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
@@ -231,6 +236,7 @@
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber
                     num={player.bossDps}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
@@ -241,6 +247,7 @@
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber
                     num={player.dps}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
@@ -251,6 +258,7 @@
                 {#if SETTINGS.live.general.state.shortenDps}
                   <AbbreviatedNumber
                     num={player.tdps}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />

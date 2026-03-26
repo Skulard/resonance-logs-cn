@@ -482,6 +482,9 @@
       return "https://bpsr.app";
     }
   });
+  let abbreviatedDecimalPlaces = $derived(
+    SETTINGS.history.general.state.abbreviatedDecimalPlaces ?? 1,
+  );
 
   function toggleGroup(id: number) {
     const next = new Set(expandedGroups);
@@ -907,7 +910,10 @@
                   >
                     {#if (activeTab === "damage" && (col.key === "totalDmg" || col.key === "bossDmg" || col.key === "bossDps" || col.key === "dps" || col.key === "tdps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "healing" && (col.key === "healDealt" || col.key === "hps") && SETTINGS.history.general.state.shortenDps) || (activeTab === "tanked" && (col.key === "damageTaken" || col.key === "tankedPS") && SETTINGS.history.general.state.shortenTps)}
                       {#if activeTab === "tanked" ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps}
-                        <AbbreviatedNumber num={p[col.key] ?? 0} />
+                        <AbbreviatedNumber
+                          num={p[col.key] ?? 0}
+                          decimalPlaces={abbreviatedDecimalPlaces}
+                        />
                       {:else}
                         {col.format(p[col.key] ?? 0)}
                       {/if}
@@ -1084,7 +1090,10 @@
                   class="px-3 py-3 text-right text-sm text-muted-foreground relative z-10"
                 >
                   {#if (col.key === "totalDmg" || col.key === "dps") && (skillType === "tanked" ? SETTINGS.history.general.state.shortenTps : SETTINGS.history.general.state.shortenDps)}
-                    <AbbreviatedNumber num={skillCellValue(item, col.key)} />
+                    <AbbreviatedNumber
+                      num={skillCellValue(item, col.key)}
+                      decimalPlaces={abbreviatedDecimalPlaces}
+                    />
                   {:else}
                     {col.format(skillCellValue(item, col.key))}
                   {/if}

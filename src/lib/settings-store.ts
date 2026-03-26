@@ -440,6 +440,7 @@ const DEFAULT_GENERAL_SETTINGS = {
   shortenAbilityScore: true,
   shortenDps: true,
   shortenTps: true,
+  abbreviatedDecimalPlaces: 1,
   eventUpdateRateMs: 200,
 };
 

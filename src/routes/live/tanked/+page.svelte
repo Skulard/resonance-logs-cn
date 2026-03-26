@@ -59,6 +59,9 @@
 
   // Table customization settings
   let tableSettings = $derived(SETTINGS.live.tableCustomization.state);
+  let abbreviatedDecimalPlaces = $derived(
+    SETTINGS.live.general.state.abbreviatedDecimalPlaces ?? 1,
+  );
   let customThemeColors = $derived(
     SETTINGS.accessibility.state.customThemeColors,
   );
@@ -207,6 +210,7 @@
                 {#if SETTINGS_SHORTEN_TPS}
                   <AbbreviatedNumber
                     num={player.totalDmg}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
@@ -217,6 +221,7 @@
                 {#if SETTINGS_SHORTEN_TPS}
                   <AbbreviatedNumber
                     num={player.dps}
+                    decimalPlaces={abbreviatedDecimalPlaces}
                     suffixFontSize={tableSettings.abbreviatedFontSize}
                     suffixColor={customThemeColors.tableAbbreviatedColor}
                   />
