@@ -74,7 +74,9 @@
         if (isDestroyed) return;
         lastEventTime = Date.now();
         hadAnyEvent = true;
-        setLiveData(event.payload);
+        if (event.payload.fightStartTimestampMs > 0) {
+          setLiveData(event.payload);
+        }
       });
 
       if (isDestroyed) {

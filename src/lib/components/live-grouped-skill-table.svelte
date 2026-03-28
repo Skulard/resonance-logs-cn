@@ -2,6 +2,7 @@
   import TableRowGlow from "$lib/components/table-row-glow.svelte";
   import AbbreviatedNumber from "$lib/components/abbreviated-number.svelte";
   import PercentFormat from "$lib/components/percent-format.svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import type {
     RawSkillStatsLike,
     RecountGroup,
@@ -83,7 +84,7 @@
     formatRateValue,
   }: Props = $props();
 
-  const expandedGroups = $state(new Set<number>());
+  const expandedGroups = new SvelteSet<number>();
 
   function numericValue(value: unknown): number {
     return typeof value === "number" ? value : 0;
@@ -127,7 +128,6 @@
   function toggleGroup(groupId: number) {
     if (expandedGroups.has(groupId)) expandedGroups.delete(groupId);
     else expandedGroups.add(groupId);
-    expandedGroups;
   }
 
   const flatRows = $derived.by(() => {

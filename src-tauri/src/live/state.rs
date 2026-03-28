@@ -609,11 +609,6 @@ impl AppStateManager {
 
         persist_and_save_encounter(state, false, "server_change");
         on_server_change(&mut state.encounter);
-
-        // Emit encounter reset event
-        if state.event_manager.should_emit_events() {
-            state.event_manager.emit_encounter_reset();
-        }
         state.battle_state = BattleStateMachine::default();
     }
 
