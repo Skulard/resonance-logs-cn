@@ -396,7 +396,11 @@ impl AppStateManager {
             return;
         }
 
-        let mut counter_dirty = state.local_monitor.counter_tracker.tick_counters(now_ms());
+        let mut counter_dirty = state.local_monitor.counter_tracker.tick_counters(
+            now_ms(),
+            &state.attr_store,
+            state.encounter.local_player_uid,
+        );
         match event {
             StateEvent::ServerChange => {
                 self.on_server_change(state);

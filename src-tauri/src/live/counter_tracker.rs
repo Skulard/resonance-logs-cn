@@ -1,6 +1,8 @@
 use crate::database::now_ms;
 use crate::live::buff_monitor::{BuffChangeEvent, BuffChangeType};
 use crate::live::commands_models::{CounterUpdateState, SlotUpdateState};
+use crate::live::entity_attr_store::EntityAttrStore;
+use crate::live::opcodes_models::{AttrType, AttrValue};
 use crate::live::opcodes_process::LocalDamageEvent;
 use log::info;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -42,12 +44,21 @@ pub enum CounterSource {
         #[serde(rename = "tickIntervalMs")]
         tick_interval_ms: u64,
         increment: u32,
+        #[serde(default, rename = "attrCondition")]
+        attr_condition: Option<TickAttrCondition>,
     },
     SkillCast {
         #[serde(rename = "skillBaseIds")]
         skill_base_ids: Vec<i32>,
         increment: u32,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TickAttrCondition {
+    pub attr_id: i32,
+    pub required_value: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -108,6 +119,8 @@ pub(crate) struct BuffTickState {
     pub applied_ticks: u64,
     pub tick_interval_ms: u64,
     pub increment: u32,
+    pub attr_condition: Option<TickAttrCondition>,
+    pub attr_type: Option<AttrType>,
 }
 
 #[derive(Debug, Default)]
@@ -185,6 +198,7 @@ impl BuffCounterTracker {
                         buff_id,
                         tick_interval_ms,
                         increment,
+                        attr_condition,
                     } => Some(BuffTickState {
                         buff_id: *buff_id,
                         active_buff_uuid: 0,
@@ -194,6 +208,10 @@ impl BuffCounterTracker {
                         applied_ticks: 0,
                         tick_interval_ms: (*tick_interval_ms).max(1),
                         increment: *increment,
+                        attr_condition: attr_condition.clone(),
+                        attr_type: attr_condition
+                            .as_ref()
+                            .and_then(|condition| AttrType::from_id(condition.attr_id)),
                     }),
                     _ => None,
                 })
@@ -342,7 +360,12 @@ impl BuffCounterTracker {
         changed
     }
 
-    pub fn tick_counters(&mut self, now_ms: i64) -> bool {
+    pub fn tick_counters(
+        &mut self,
+        now_ms: i64,
+        attr_store: &EntityAttrStore,
+        local_player_uid: i64,
+    ) -> bool {
         let mut changed = false;
         let (rules, states) = (&self.rules, &mut self.states);
         for rule in rules {
@@ -398,10 +421,15 @@ impl BuffCounterTracker {
 
                 if expected_ticks > tick_state.applied_ticks {
                     let new_ticks = expected_ticks - tick_state.applied_ticks;
-                    let multiplier = u32::try_from(new_ticks).unwrap_or(u32::MAX);
-                    let increment_total = tick_state.increment.saturating_mul(multiplier);
-                    pending_increment = pending_increment.saturating_add(increment_total);
                     tick_state.applied_ticks = expected_ticks;
+
+                    let condition_met =
+                        matches_attr_condition(attr_store, local_player_uid, tick_state);
+                    if condition_met {
+                        let multiplier = u32::try_from(new_ticks).unwrap_or(u32::MAX);
+                        let increment_total = tick_state.increment.saturating_mul(multiplier);
+                        pending_increment = pending_increment.saturating_add(increment_total);
+                    }
                 }
             }
 
@@ -522,6 +550,24 @@ fn scaled_increment(increment: u32, matches: usize) -> Option<u32> {
     }
 
     Some(increment.saturating_mul(u32::try_from(matches).unwrap_or(u32::MAX)))
+}
+
+fn matches_attr_condition(
+    attr_store: &EntityAttrStore,
+    local_player_uid: i64,
+    tick_state: &BuffTickState,
+) -> bool {
+    match (tick_state.attr_condition.as_ref(), tick_state.attr_type) {
+        (None, _) => true,
+        (Some(_condition), None) => false,
+        (Some(condition), Some(attr_type)) => {
+            attr_store
+                .attr(local_player_uid, attr_type)
+                .and_then(AttrValue::as_int)
+                .and_then(|value| i32::try_from(value).ok())
+                == Some(condition.required_value)
+        }
+    }
 }
 
 fn add_increment_to_slots(state: &mut CounterModelState, increment: u32) -> bool {

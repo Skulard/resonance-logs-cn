@@ -53,7 +53,7 @@ pub enum AttrType {
     StarLevel,
     GearTier,
     BaseStrength,
-    Gender,
+    MoveType,
     SkillId,
     ResurrectionCount,
     Endurance,
@@ -126,7 +126,7 @@ impl AttrType {
             attr_type::ATTR_STAR_LEVEL => Some(AttrType::StarLevel),
             attr_type::ATTR_GEAR_TIER => Some(AttrType::GearTier),
             attr_type::ATTR_BASE_STRENGTH => Some(AttrType::BaseStrength),
-            attr_type::ATTR_GENDER => Some(AttrType::Gender),
+            attr_type::ATTR_MOVE_TYPE => Some(AttrType::MoveType),
             attr_type::ATTR_SKILL_ID => Some(AttrType::SkillId),
             attr_type::ATTR_RESURRECTION_COUNT => Some(AttrType::ResurrectionCount),
             attr_type::ATTR_ENDURANCE => Some(AttrType::Endurance),
@@ -198,7 +198,7 @@ impl AttrType {
             AttrType::StarLevel => attr_type::ATTR_STAR_LEVEL,
             AttrType::GearTier => attr_type::ATTR_GEAR_TIER,
             AttrType::BaseStrength => attr_type::ATTR_BASE_STRENGTH,
-            AttrType::Gender => attr_type::ATTR_GENDER,
+            AttrType::MoveType => attr_type::ATTR_MOVE_TYPE,
             AttrType::SkillId => attr_type::ATTR_SKILL_ID,
             AttrType::ResurrectionCount => attr_type::ATTR_RESURRECTION_COUNT,
             AttrType::Endurance => attr_type::ATTR_ENDURANCE,
@@ -438,7 +438,7 @@ pub mod attr_type {
     pub const ATTR_STAR_LEVEL: i32 = 0x34; // Enhancement/star level
     pub const ATTR_GEAR_TIER: i32 = 0x35; // Gear tier/grade
     pub const ATTR_BASE_STRENGTH: i32 = 0x46; // Base strength/attack stat
-    pub const ATTR_GENDER: i32 = 0x47; // Character gender/appearance
+    pub const ATTR_MOVE_TYPE: i32 = 0x47; // AttrMoveType, see EMoveType
     pub const ATTR_SKILL_ID: i32 = 0x64; // AttrSkillId
     pub const ATTR_RESURRECTION_COUNT: i32 = 0x65; // Number of resurrections/revives
     pub const ATTR_ENDURANCE: i32 = 0x67; // Endurance/stamina stat

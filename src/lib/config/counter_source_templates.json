@@ -41,7 +41,11 @@
       "buffDurationTick": {
         "buffId": 3050081,
         "tickIntervalMs": 1000,
-        "increment": 12
+        "increment": 12,
+        "attrCondition": {
+          "attrId": 71,
+          "requiredValue": 0
+        }
       }
     }
   },
