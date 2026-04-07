@@ -11,6 +11,17 @@
     }
   },
   {
+    "sourceId": "stormablade_x2",
+    "name": "雷影X2, 释放一闪, 飞雷神获得 24 点能量",
+    "description": "释放一闪, 飞雷神获得 24 点能量",
+    "source": {
+      "skillCast": {
+        "skillBaseIds": [1718, 1717],
+        "increment": 24
+      }
+    }
+  },
+  {
     "sourceId": "stormablade_x4",
     "name": "雷影X4, 释放雷切获得 120 点能量",
     "description": "雷影X4, 释放雷切获得 120 点能量",
