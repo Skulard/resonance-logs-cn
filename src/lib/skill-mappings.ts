@@ -67,6 +67,8 @@ export type CounterRulePreset = {
   effectSlots: CounterEffectSlotPreset[];
 };
 
+export type CounterSlotDisplayMode = "raw" | "remainingToThreshold";
+
 export type CounterEffectSlotPreset = {
   slotId: number;
   threshold: number | null;
@@ -77,6 +79,8 @@ export type CounterEffectSlotPreset = {
   onBuffRemove: CounterAction;
   freezeDurationMs?: number;
   onFreezeExpire?: CounterAction;
+  altFreeze?: { conditionBuffId: number; freezeDurationMs: number };
+  displayMode?: CounterSlotDisplayMode;
 };
 
 export type SourceTemplate = {
@@ -181,6 +185,12 @@ export function resolveCounterEffectSlots(
               : {}),
             ...(item.slot.onFreezeExpire !== undefined
               ? { onFreezeExpire: item.slot.onFreezeExpire }
+              : {}),
+            ...(item.slot.altFreeze !== undefined
+              ? { altFreeze: item.slot.altFreeze }
+              : {}),
+            ...(item.slot.displayMode !== undefined
+              ? { displayMode: item.slot.displayMode }
               : {}),
           },
         ]

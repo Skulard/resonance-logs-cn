@@ -202,7 +202,7 @@
   {
     "sourceId": "frost_mage_x1",
     "name": "冰魔X1, 释放冰霜之矛获得 12 点能量",
-    "description": "释放冰之灌注获得 12 点能量",
+    "description": "释放冰霜之矛获得 12 点能量",
     "source": {
       "skillCast": {
         "skillBaseIds": [1242],

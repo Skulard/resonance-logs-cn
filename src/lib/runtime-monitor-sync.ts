@@ -26,12 +26,29 @@ function normalizeCounterRules(rules: CounterRule[]): CounterRule[] {
 
 function getCounterRuleBuffIds(rule: CounterRule): number[] {
   const result = rule.effectSlots.map((slot) => slot.resetBuffId);
+  for (const slot of rule.effectSlots) {
+    if (slot.altFreeze) {
+      result.push(slot.altFreeze.conditionBuffId);
+    }
+  }
   for (const source of rule.sources) {
     if ("buffDurationTick" in source) {
       result.push(source.buffDurationTick.buffId);
     }
   }
   return result;
+}
+
+function stripUiOnlyCounterRuleFields(rule: {
+  ruleId: number;
+  sources: CounterRule["sources"];
+  effectSlots: Array<CounterRule["effectSlots"][number] & { displayMode?: unknown }>;
+}): CounterRule {
+  return {
+    ruleId: rule.ruleId,
+    sources: rule.sources,
+    effectSlots: rule.effectSlots.map(({ displayMode: _displayMode, ...slot }) => slot),
+  };
 }
 
 function buildSkillRuntimeSnapshot(): MonitorRuntimeSnapshot["skill"] {
@@ -73,7 +90,7 @@ function buildSkillRuntimeSnapshot(): MonitorRuntimeSnapshot["skill"] {
   const activeCounterRuleIds = uniqueSortedNumbers(inlineCounterRuleIds);
   const enabledPresetCounterRules = getCounterRules()
     .filter((rule) => activeCounterRuleIds.includes(rule.ruleId))
-    .map((rule) => ({
+    .map((rule) => stripUiOnlyCounterRuleFields({
       ruleId: rule.ruleId,
       sources: rule.sources,
       effectSlots: rule.effectSlots,
@@ -82,7 +99,7 @@ function buildSkillRuntimeSnapshot(): MonitorRuntimeSnapshot["skill"] {
     (profile?.userCounterRules ?? []).filter((rule) =>
       activeCounterRuleIds.includes(rule.ruleId),
     ),
-  ).map(({ name: _name, ...rule }) => rule);
+  ).map(({ name: _name, ...rule }) => stripUiOnlyCounterRuleFields(rule));
   const enabledCounterRules = normalizeCounterRules([
     ...enabledPresetCounterRules,
     ...enabledUserCounterRules,

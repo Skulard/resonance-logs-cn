@@ -64,5 +64,42 @@
         "onBuffRemove": "startCount"
       }
     ]
+  },
+  {
+    "ruleId": 4,
+    "name": "炎角-被动",
+    "sources": [
+      {
+        "skillCastComplete": {
+          "skillBaseIds": [1520, 1519],
+          "increment": 1
+        }
+      }
+    ],
+    "effectSlots": [
+      {
+        "slotId": 1,
+        "threshold": 3,
+        "displayMode": "remainingToThreshold",
+        "resetBuffId": 3210141,
+        "onBuffAdd": "resetAndStartCount",
+        "onBuffChange": "noOp",
+        "onBuffRemove": "noOp"
+      },
+      {
+        "slotId": 2,
+        "threshold": null,
+        "resetBuffId": 3210141,
+        "onBuffAdd": "freeze",
+        "onBuffChange": "noOp",
+        "onBuffRemove": "noOp",
+        "freezeDurationMs": 15000,
+        "altFreeze": {
+          "conditionBuffId": 2110123,
+          "freezeDurationMs": 5000
+        },
+        "onFreezeExpire": "noOp"
+      }
+    ]
   }
 ]

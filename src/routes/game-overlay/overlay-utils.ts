@@ -1,5 +1,6 @@
 import type {
   BuffUpdateState,
+  CounterSlotState,
   CounterUpdateState,
   SkillCdState,
 } from "$lib/api";
@@ -170,6 +171,19 @@ export function buildBuffTextRow(
   };
 }
 
+function formatCounterCountText(
+  slotState: CounterSlotState,
+  slotConfig?: CounterRulePreset["effectSlots"][number],
+): string {
+  if (
+    slotConfig?.displayMode === "remainingToThreshold"
+    && slotState.threshold !== null
+  ) {
+    return `${Math.max(0, slotState.threshold - slotState.currentCount)}`;
+  }
+  return `${Math.max(0, slotState.currentCount)}`;
+}
+
 export function getCustomPanelDisplayRow(
   entry: InlineBuffEntry,
   now: number,
@@ -212,7 +226,7 @@ export function getCustomPanelDisplayRow(
     return {
       key: `inline_counter_${entry.id}`,
       label: entry.label,
-      valueText: `${Math.max(0, selectedSlot.currentCount)}`,
+      valueText: formatCounterCountText(selectedSlot, slotConfig),
       metaText: undefined,
       progressPercent: 0,
       showProgress: false,
