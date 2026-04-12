@@ -40,10 +40,10 @@
   <div class="resources-panel" data-class={classKey}>
     <div class="resources-row energy-row">
       {#each barResources as res}
-        {@const cur = getResourceValue(res.currentIndex)}
-        {@const max = Math.max(1, getResourceValue(res.maxIndex))}
-        {@const curPrecise = getResourcePreciseValue(res.currentIndex)}
-        {@const maxPrecise = Math.max(1, getResourcePreciseValue(res.maxIndex))}
+        {@const cur = getResourceValue(res.currentId)}
+        {@const max = Math.max(1, getResourceValue(res.maxId))}
+        {@const curPrecise = getResourcePreciseValue(res.currentId)}
+        {@const maxPrecise = Math.max(1, getResourcePreciseValue(res.maxId))}
         {@const energyPercent = Math.min(100, Math.max(0, (curPrecise / maxPrecise) * 100))}
         {@const effectiveBuffIds = res.buffBaseIds ?? (res.buffBaseId ? [res.buffBaseId] : [])}
         {@const buffPercent = effectiveBuffIds.length
@@ -66,8 +66,8 @@
 
     <div class="resources-row sharpness-row">
       {#each chargeResources as res}
-        {@const cur = getResourceValue(res.currentIndex)}
-        {@const max = Math.max(1, getResourceValue(res.maxIndex))}
+        {@const cur = getResourceValue(res.currentId)}
+        {@const max = Math.max(1, getResourceValue(res.maxId))}
         <div class="res-charges-container">
           {#each Array(max) as _, i}
             <img src={i < cur ? res.imageOn : res.imageOff} alt={res.label} class="res-charge-icon" />

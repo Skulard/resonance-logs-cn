@@ -2,7 +2,8 @@ use crate::database::{EncounterMetadata, PlayerNameEntry, now_ms, save_encounter
 use crate::live::bootstrap_snapshot::MonitorRuntimeSnapshot;
 use crate::live::buff_monitor::{BossBuffMonitors, BuffMonitor};
 use crate::live::commands_models::{
-    CounterUpdateState, FightResourceState, PanelAttrState, SkillCdState, TrainingDummyState,
+    CounterUpdateState, FightResourceEntry, FightResourceState, PanelAttrState, SkillCdState,
+    TrainingDummyState,
 };
 use crate::live::counter_tracker::{BuffCounterTracker, CounterRule};
 use crate::live::dungeon_log::{BattleStateMachine, EncounterResetReason};
@@ -875,13 +876,23 @@ impl AppStateManager {
         }
 
         if let Some(values) = result.fight_resources {
-            let now = crate::database::now_ms();
-            let new_state = FightResourceState {
-                values,
-                received_at: now,
-            };
-            state.local_monitor.fight_res_state = Some(new_state.clone());
-            state.event_manager.emit_fight_resource_update(new_state);
+            let ids = state
+                .attr_store
+                .fight_resource_ids(state.encounter.local_player_uid);
+            if !ids.is_empty() {
+                let now = crate::database::now_ms();
+                let new_state = FightResourceState {
+                    entries: ids
+                        .iter()
+                        .copied()
+                        .zip(values)
+                        .map(|(id, value)| FightResourceEntry { id, value })
+                        .collect(),
+                    received_at: now,
+                };
+                state.local_monitor.fight_res_state = Some(new_state.clone());
+                state.event_manager.emit_fight_resource_update(new_state);
+            }
         }
 
         let mut counter_dirty = false;

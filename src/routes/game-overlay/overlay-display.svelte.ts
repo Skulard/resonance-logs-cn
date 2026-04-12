@@ -474,19 +474,19 @@ export function customPanelRowsByGroup() {
   return _customPanelRowsByGroup;
 }
 
-export function getResourceValue(index: number): number {
+export function getResourceValue(resourceId: number): number {
   return getResourceValueValue(
-    overlayRuntime.fightResValues,
+    overlayRuntime.fightResMap,
     selectedClassKey(),
-    index,
+    resourceId,
   );
 }
 
-export function getResourcePreciseValue(index: number): number {
+export function getResourcePreciseValue(resourceId: number): number {
   return getResourcePreciseValueValue(
-    overlayRuntime.fightResValues,
+    overlayRuntime.fightResMap,
     selectedClassKey(),
-    index,
+    resourceId,
   );
 }
 

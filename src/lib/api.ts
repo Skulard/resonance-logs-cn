@@ -100,8 +100,13 @@ export type SkillCdUpdatePayload = {
 };
 
 export type FightResourceState = {
-  values: number[];
+  entries: FightResourceEntry[];
   receivedAt: number;
+};
+
+export type FightResourceEntry = {
+  id: number;
+  value: number;
 };
 
 export type FightResourceUpdatePayload = {

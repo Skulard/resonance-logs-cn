@@ -18,7 +18,7 @@ export const overlayRuntime = $state({
   isMounted: false,
   cdMap: new Map<number, SkillCdState>(),
   skillDurationMap: new Map<number, SkillDurationState>(),
-  fightResValues: [] as number[],
+  fightResMap: new Map<number, number>(),
   buffMap: new Map<number, BuffUpdateState>(),
   counterMap: new Map<number, CounterUpdateState>(),
   panelAttrMap: new Map<number, number>(),
@@ -36,8 +36,8 @@ export function skillDurationMap() {
   return overlayRuntime.skillDurationMap;
 }
 
-export function fightResValues() {
-  return overlayRuntime.fightResValues;
+export function fightResMap() {
+  return overlayRuntime.fightResMap;
 }
 
 export function buffMap() {

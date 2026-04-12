@@ -110,7 +110,11 @@ export function initOverlay() {
     overlayRuntime.skillDurationMap = nextDurationMap;
   });
   const unlistenRes = onFightResUpdate((event) => {
-    overlayRuntime.fightResValues = event.payload.fightRes.values;
+    const next = new Map<number, number>();
+    for (const entry of event.payload.fightRes.entries) {
+      next.set(entry.id, entry.value);
+    }
+    overlayRuntime.fightResMap = next;
   });
   const unlistenPanelAttr = onPanelAttrUpdate((event) => {
     const next = new Map(overlayRuntime.panelAttrMap);

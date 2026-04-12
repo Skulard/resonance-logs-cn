@@ -56,7 +56,7 @@
         ? undefined
         : display}
       {@const resourceBlocked = skill?.resourceRequirement
-        ? getResourceValue(skill.resourceRequirement.resourceIndex) <
+        ? getResourceValue(skill.resourceRequirement.resourceId) <
           skill.resourceRequirement.amount
         : false}
       {@const isOnCd = effectiveDisplay?.isActive ?? false}

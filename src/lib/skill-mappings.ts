@@ -32,8 +32,8 @@ export type ClassSkillConfig = {
 export type ResourceDefinition = {
   type: "bar" | "charges";
   label: string;
-  currentIndex: number;
-  maxIndex: number;
+  currentId: number;
+  maxId: number;
   imageOn: string;
   imageOff: string;
   buffBaseId?: number;
@@ -46,7 +46,7 @@ export type SpecialBuffDisplay = {
 };
 
 export type ResourceRequirement = {
-  resourceIndex: number;
+  resourceId: number;
   amount: number;
 };
 

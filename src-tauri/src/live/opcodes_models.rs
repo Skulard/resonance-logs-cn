@@ -492,7 +492,8 @@ pub mod attr_type {
     pub const ATTR_ELEMENT_FLAG: i32 = 0x646d6c;
     pub const ATTR_REDUCTION_LEVEL: i32 = 0x64696d;
     pub const ATTR_REDUCTION_ID: i32 = 0x6f6c65;
-    pub const ATTR_FIGHT_RESOURCES: i32 = 0xc352; // Active buff/consumable slot
+    pub const ATTR_FIGHT_RESOURCE_IDS: i32 = 0xc351; // Fight resource IDs
+    pub const ATTR_FIGHT_RESOURCES: i32 = 0xc352; // Fight resource values
     pub const ATTR_BUFF_SLOT_2: i32 = 0xea92; // Active buff/consumable slot (type 2)
     pub const ATTR_ENERGY_FLAG: i32 = 0x543cd3c6;
 }

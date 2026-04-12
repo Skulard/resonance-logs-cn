@@ -1015,6 +1015,18 @@ fn process_player_attrs(
         let Some(attr_id) = attr.id else { continue };
         let raw_bytes_opt = attr.raw_data.as_deref();
 
+        if attr_id == attr_type::ATTR_FIGHT_RESOURCE_IDS {
+            if let Some(ids) = raw_bytes_opt.and_then(parse_fight_resources).map(|values| {
+                values
+                    .into_iter()
+                    .filter_map(|value| i32::try_from(value).ok())
+                    .collect::<Vec<_>>()
+            }) {
+                let _ = attr_store.set_fight_resource_ids(target_uid, ids);
+            }
+            continue;
+        }
+
         if attr_id == attr_type::ATTR_FIGHT_RESOURCES {
             if let Some(values) = raw_bytes_opt.and_then(parse_fight_resources) {
                 log::debug!(

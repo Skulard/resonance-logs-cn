@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub struct EntityAttrStore {
     attrs: HashMap<i64, HashMap<AttrType, AttrValue>>,
     hate_lists: HashMap<i64, Vec<HateEntry>>,
+    fight_resource_ids: HashMap<i64, Vec<i32>>,
     temp_attrs: HashMap<i32, i32>,
     local_player_uid: i64,
     panel_attr_values: HashMap<i32, i32>,
@@ -25,6 +26,7 @@ impl EntityAttrStore {
         Self {
             attrs: HashMap::with_capacity(attr_entries),
             hate_lists: HashMap::new(),
+            fight_resource_ids: HashMap::new(),
             temp_attrs: HashMap::new(),
             local_player_uid: 0,
             panel_attr_values: HashMap::new(),
@@ -71,6 +73,24 @@ impl EntityAttrStore {
 
     pub fn panel_attr_value(&self, attr_id: i32) -> Option<i32> {
         self.panel_attr_values.get(&attr_id).copied()
+    }
+
+    pub fn set_fight_resource_ids(&mut self, uid: i64, ids: Vec<i32>) -> bool {
+        let changed = self
+            .fight_resource_ids
+            .get(&uid)
+            .is_none_or(|prev| prev.as_slice() != ids.as_slice());
+        if !changed {
+            return false;
+        }
+        self.fight_resource_ids.insert(uid, ids);
+        true
+    }
+
+    pub fn fight_resource_ids(&self, uid: i64) -> &[i32] {
+        self.fight_resource_ids
+            .get(&uid)
+            .map_or(&[], std::vec::Vec::as_slice)
     }
 
     pub fn set_temp_attr(&mut self, attr_id: i32, value: i32) -> bool {
@@ -164,6 +184,7 @@ impl EntityAttrStore {
     pub fn clear_all_entities(&mut self) {
         self.attrs.clear();
         self.hate_lists.clear();
+        self.fight_resource_ids.clear();
     }
 
     pub fn drain_changes(&mut self) -> AttrChanges {

@@ -356,30 +356,28 @@ export function computeDisplay(
 }
 
 export function getResourceValue(
-  fightResValues: number[],
+  fightResMap: Map<number, number>,
   selectedClassKey: string,
-  index: number,
+  resourceId: number,
 ): number {
-  const resolved = index < 0 ? fightResValues.length + index : index;
-  const raw = fightResValues[resolved];
+  const raw = fightResMap.get(resourceId);
   if (raw === undefined) {
-    return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[index] ?? 0;
+    return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[resourceId] ?? 0;
   }
-  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[index] ?? 1;
+  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[resourceId] ?? 1;
   return Math.floor(raw / scale);
 }
 
 export function getResourcePreciseValue(
-  fightResValues: number[],
+  fightResMap: Map<number, number>,
   selectedClassKey: string,
-  index: number,
+  resourceId: number,
 ): number {
-  const resolved = index < 0 ? fightResValues.length + index : index;
-  const raw = fightResValues[resolved];
+  const raw = fightResMap.get(resourceId);
   if (raw === undefined) {
-    return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[index] ?? 0;
+    return DEFAULT_RESOURCE_VALUES_BY_CLASS[selectedClassKey]?.[resourceId] ?? 0;
   }
-  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[index] ?? 1;
+  const scale = RESOURCE_SCALES_BY_CLASS[selectedClassKey]?.[resourceId] ?? 1;
   return raw / scale;
 }
 

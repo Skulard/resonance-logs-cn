@@ -335,9 +335,16 @@ pub struct PanelAttrUpdatePayload {
 
 #[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct FightResourceEntry {
+    pub id: i32,
+    pub value: i64,
+}
+
+#[derive(specta::Type, serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct FightResourceState {
-    /// The full list of resource values
-    pub values: Vec<i64>,
+    /// The full list of fight resource id/value pairs
+    pub entries: Vec<FightResourceEntry>,
     /// Local timestamp when this state was received
     pub received_at: i64,
 }
